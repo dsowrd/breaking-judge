@@ -600,3 +600,24 @@ on the dancer inside the turn window, so a segmentation error (window shifted on
 walk-in) corrupts the input far more than for whole-frame features. Hand-labelled rounds are few (45–52, 19–22 battles),
 so the 0.77 needs a larger clean set before it is a claim → label the remaining 38 battles (review page), retrain the
 turn detector, re-run pose features and the same evaluation.
+
+### Diagnostic: exact turns or easier battles? (2026-11-03, `tools/battle/wdsf_turns_cv.py`, `scripts/diag_handcv.sh`)
+
+The 22 hand-labelled battles were re-segmented by the turn detector trained with their own event held out (as in
+`wdsf_turn_detector.py eval`, joint, 3 seeds, min 15 s), and the same pose pairwise MLAVL was retrained on that
+segmentation (`WDSF_TURNS=.../wdsf_turns_handcv.csv`, seed 0). Same rounds scored, exact vs detected turns:
+
+| target | hand rounds | exact turns (pose_*_s0) | detected turns (handcv_*_s0) | all other rounds (detected) |
+|---|---|---|---|---|
+| total | 51–52 | 73.1% | 78.4% | 50–51% |
+| Execution | 44–45 | 75.6% | 70.5% | 52–55% |
+| Technique | 44–45 | 55.6% | 47.7% | 54–55% |
+
+- With detected turns the hand-labelled battles stay at 70–78% (total, Execution): **exact turns are not what lifts
+  them.** Their margins are not larger either (median |margin| total 4.8 vs 4.2; auto rounds with |margin| above the
+  hand median: 55%).
+- So the earlier reading "segmentation is the bottleneck" is not supported as stated. Two explanations remain: (a)
+  these 22 battles are easier / different for the model, or (b) the detector segments these battles well (IoU 0.86
+  was measured on them) but the other 291 much worse. Only labelling battles that the detector never saw separates
+  (a) from (b): the 38 battles on the labelling page give both the detector IoU on unseen battles and a larger clean
+  test set. n = 44–52 rounds per cell, so every number above has a 95% CI of about ±13 points.

@@ -51,7 +51,8 @@ def build_rows(target, min_clips=8, feat='pamfn'):
     if target != 'total':
         js = js[(js.system == '5crit') & js.has_criteria]
     rnd = js.groupby(['competition', 'battle_id', 'round'])[target].mean().rename('blue_score').reset_index()
-    turns = pd.read_csv(f'{D}/wdsf_turns.csv').merge(rnd, on=['competition', 'battle_id', 'round'], how='inner')
+    # WDSF_TURNS: another segmentation of the same videos (diagnostics, tools/battle/wdsf_turns_cv.py)
+    turns = pd.read_csv(os.environ.get('WDSF_TURNS', f'{D}/wdsf_turns.csv')).merge(rnd, on=['competition', 'battle_id', 'round'], how='inner')
     rows, cache = [], {}
     for t in turns.itertuples():
         if t.video_id not in cache:
