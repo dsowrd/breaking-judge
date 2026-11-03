@@ -23,9 +23,9 @@
 | 10/6, 10/13 | 논문 발표 1 | MLAVL 발표 (자료 완성·제출됨) |
 | 10/20 | 논문 survey | 두 번째 논문 **Bailando (CVPR 2022) 확정** (2026-10-19), 발표자료 완성·Drive 업로드 |
 | 10/26–10/31 | — | **학회 출장(삿포로). 사람은 자리를 비움 → 장시간 학습을 이때 돌린다** |
-| 10/27 | 논문 발표 2 | 출장과 겹침 → 11/3 발표로 교수님께 조정 요청 예정 (미확정) |
-| 11/3 | 논문 발표 2 | 두 번째 논문 발표 |
-| 11/10, 11/17 | **중간발표** | 재현 결과 + 1차 개선 (발표 순서 미정) |
+| 10/27 | 논문 발표 2 | 출장과 겹침 → 11/3으로 조정됨 |
+| 11/3 | 논문 발표 2 | **Bailando 발표 완료.** 교수님 코멘트: 예술(춤) 평가는 벤치마크를 만드는 방향이면 CVPR 논문도 가능 |
+| 11/10, 11/17 | **중간발표** | 재현 결과 + 1차 개선 (발표 순서 미정, **자료는 11/10 오전 e-campus 제출**) |
 | 11/24 | 논문 구현 | 배틀 데이터 구현 중간 점검 |
 | 12/1, 12/8 | **최종발표** | 배틀 승패 판정 결과 |
 
@@ -276,9 +276,10 @@ CUDA_VISIBLE_DEVICES=0 $MLAVL_PY main.py ...
   - **안쪽 검증 결과 (2026-10-20 저녁)**: 비교형 MLAVL Technique 54.4–55.6%(50% 대비만 유의, 기준선 대비 유의하지 않음), 총점 51–52%. **처음 보는 댄서 라운드에서는 37–41%로 떨어짐** → MLAVL이 선형 모델 이상으로 배운 건 주로 "댄서가 누구인가"(옷·체형). 다음 단계: MLAVL 입력에서 외형을 빼기 = Bailando식 포즈 코드북 입력(2차 개선 계획과 일치), 또는 저차원·외형 불변 입력. 그리고 손 라벨 추가
   - **포즈 기반 입력 시도 (2026-10-20 밤 시작, 정현도: "포즈 기반으로 시도해보고, 데이터 문제 같으면 라벨링")**: `scripts/wdsf_pose.sh`(Keypoint R-CNN 3프레임마다, GPU 0 3 shard, 약 7시간 → BRACE 학습 댄서 선택기 → 클립별 포즈·kick-beat 114차원 `features/WDSF/pose/`) → 자동으로 `scripts/phase5c_pose_runs.sh`(포즈/영상 선형 차이 모델 + 포즈 입력 비교형 MLAVL 5개 + 엄격 평가, 로그 `logs/wdsf/phase5c_pose_runs.log`). fold 배정은 `ours/wdsf/folds.json`으로 고정(모든 실험 동일 분할). 판단 기준: 포즈 입력에서 처음 보는 댄서 라운드 정확도가 유지되고 기준선보다 유의하게 높은가
   - 라벨링 페이지에 배틀 38개 추가(23–60번, 미완료). 완료되면 손 라벨 60배틀 → 깨끗한 평가셋 약 150 라운드 + 검출기 재학습
+- **2026-11-03 상태**: 출장(10/26–11/2) 동안 진행 없음. 라벨링 페이지는 여전히 22배틀(23–60번 38개 미완료). 2차 발표(Bailando) 완료, 교수님 코멘트 "예술(춤) 평가는 벤치마크를 만드는 방향이면 CVPR 논문도 가능". 중간발표(자료 11/10 오전 e-campus 제출)는 별도 세션에서 준비
 - **서버 주의 (2026-10-20)**: 루트 `/`가 100% 참(다른 프로젝트 ETRI `situation_regen_20261020/hf_cache`가 원인). 이 프로젝트 `ckpt/`는 `/data/mlavl/ckpt_live`로 옮기고 심볼릭 링크. `/data`는 여유 1.5TB로 늘었음
 - **데이터 후보 조사 (2026-10-20)**: 공개 학술 데이터셋 중 영상+심판 점수가 있는 스트릿댄스는 없음. WDSF 브레이킹 예선(PreSeed)은 절대 점수 0–100(2,855 공연, 심판단 신뢰도 0.94, `tools/battle/wdsf_preseed.py` → `wdsf_preselection_scores.csv`)이지만 예선 영상이 거의 공개되지 않음. HHI(Hip Hop International) 크루 안무는 절대 점수(P/S, 심판별)+공식 영상 약 2,385개로 MLAVL 설정과 맞지만 **"크루는 목적이 너무 달라서 보류" (정현도 2026-10-20)**
-- **두 번째 논문 = Bailando (CVPR 2022) 확정 (2026-10-19 정현도).** 발표자료 `2025198001_정현도_논문발표2.pptx` 완성(1차 양식, 7쪽, 약 6분 25초, 공식 데모 영상 4개 삽입, 노트에 대본). Google Drive 1차 발표와 같은 폴더(`1ldzwePCgc0fvhxp4RdszsZXgXWmKY_4O`)에 업로드. 표지 날짜는 제출 마감 기준 10/27
+- **두 번째 논문 = Bailando (CVPR 2022) 확정 (2026-10-19 정현도).** 발표자료 `2025198001_정현도_논문발표2.pptx` 완성(1차 양식, 7쪽, 약 6분 25초, 공식 데모 영상 4개 삽입, 대본·해설은 별도 Claude Doc https://claude.ai/artifact/SarGN7FLybNAjay5p7kRhf (PDF는 Drive 같은 폴더), 슬라이드 노트는 비움). Google Drive 1차 발표와 같은 폴더(`1ldzwePCgc0fvhxp4RdszsZXgXWmKY_4O`)에 업로드. 표지 날짜는 제출 마감 기준 10/27
 - **결합 개선 계획 (MLAVL + Bailando)**: ① 2D 브레이킹 포즈(BRACE keypoint + Keypoint R-CNN 추정)로 Bailando식 choreographic memory(상·하체 VQ-VAE 코드북) 학습 → MAG² 동작 노드를 CLIP 텍스트 대신 코드북 벡터로 ② 텍스트→클립 전부 연결 대신 각 클립을 실제로 쓴 코드와만 연결(샘플별 그래프) ③ beat align(동작 비트·음악 비트 정렬)을 AVCF 입력에 ④ (선택) 상대 댄서 조건(Duolando식 cross-attention). 항목별 점수로 "어떤 모듈이 어떤 항목을 올렸나" ablation. 2D 토큰화는 X-Dancer(ICCV 2025) 참고. 음악 표현은 EDGE(CVPR 2023)의 Jukebox feature를 추가 실험 후보로
 - 참고한 후속 연구(발표 7쪽에 언급): Bailando++ (TPAMI 2023, 과제 학회 조건 밖), EDGE (CVPR 2023, 사용자 평가 147명), X-Dancer (ICCV 2025), Danceba (ICCV 2025), Lodge (CVPR 2024), Beat-It (ECCV 2024), Duolando (ICLR 2024, 듀엣 춤)
 
@@ -408,13 +409,13 @@ MLAVL BibTeX (공식 README에서 그대로 가져옴):
 
 ## 8. 아직 정해지지 않은 것
 
-- [ ] 두 번째 논문 발표일 11/3 조정: 정현도 의견은 "가능할 것 같다"(2026-10-11). 교수님 확정 대기
+- [x] 두 번째 논문 발표일 11/3 조정: 승인되어 11/3 발표 완료
 - [ ] 중간·기말 발표 순서(11/10 vs 11/17, 12/1 vs 12/8): 미정. **계획은 빠른 날짜(11/10, 12/1)를 마감으로 가정**한다
 - [ ] RG·FS1000 원본 영상 확보 가능 여부 → pose branch를 공개 벤치마크에서도 할지 결정 (조사 중, 결과는 아래 "조사 결과"에 기록)
 - [x] 외부 인터넷: 가능 (4절). NAS: 미마운트, 주소 필요. HDD: `/dev/sdb1` 미마운트, 사람이 sudo로 마운트해야 함 (4절)
 - [ ] 올림픽 배틀 전체 영상 확보 가능 여부 (조사 중)
 - [ ] 브레이킹 무브 어휘 최종 목록: 초안 `ours/vocab/action-label_BREAKING.csv` 작성됨, 정현도 검토 필요
-- [x] GitHub: 계정 `dsowrd`, 저장소 `breaking-judge`(private, 2026-10-21 `mlavl-dance-battle`에서 이름 변경), 인증은 SSH deploy key(`~/.ssh/mlavl_deploy`, alias `github-mlavl`). 로컬 git identity는 `dsowrd <dsowrd123@gmail.com>`로 설정(저장소 로컬 config). GitHub 계정 이메일과 다르면 커밋이 계정에 연결되지 않으니 확인
+- [x] GitHub: 계정 `dsowrd`, 저장소 `breaking-judge`(private, 2026-10-21 `mlavl-dance-battle`에서 이름 변경 결정. **2026-11-03 기준 GitHub 웹에서의 이름 변경은 아직 안 됨**, origin은 아직 `dsowrd/mlavl-dance-battle` — 정현도가 웹에서 바꾼 뒤 `git remote set-url origin git@github-mlavl:dsowrd/breaking-judge.git`), 인증은 SSH deploy key(`~/.ssh/mlavl_deploy`, alias `github-mlavl`). 로컬 git identity는 `dsowrd <dsowrd123@gmail.com>`로 설정(저장소 로컬 config). GitHub 계정 이메일과 다르면 커밋이 계정에 연결되지 않으니 확인
 - [x] 저장소 공개 여부: **당분간 private 유지** (정현도, 2026-10-11). public 전환과 저자 연락은 나중에 다시 결정
 
 ### 조사 결과 (2026-10-11, 웹 조사. 다운로드는 아직 하지 않음)
