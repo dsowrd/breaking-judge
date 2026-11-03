@@ -46,7 +46,7 @@ def main(a):
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
-    p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose'])
+    p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose', 'vq', 'vqpose'])
     p.add_argument('--target', default='total')
     p.add_argument('--k', type=int, default=8)
     p.add_argument('--video_only', action='store_true', help='leave the audio statistics out')

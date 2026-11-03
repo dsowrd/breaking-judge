@@ -60,9 +60,12 @@ def build_rows(target, min_clips=8, feat='pamfn'):
             centre = (d['clip_start_frame'] + float(d['clip_len']) / 2) / float(d['fps'])
             ok = np.ones(len(centre), bool)
             v = d['rgb'].astype(np.float32)
-            if feat == 'pose':
-                p = np.load(f'{F}/pose/{t.video_id}.npz')
-                v, ok = p['pose'].astype(np.float32), p['has_pose'] > 0
+            if feat != 'pamfn':
+                # 'pose' = hand-made 114-d statistics; 'vq' = Bailando-style choreographic-memory code vectors
+                # (tools/battle/choreo_memory.py); 'vqpose' = both concatenated
+                parts = [np.load(f'{F}/{n}/{t.video_id}.npz') for n in {'pose': ['pose'], 'vq': ['vq'], 'vqpose': ['pose', 'vq']}[feat]]
+                v = np.concatenate([q['pose'].astype(np.float32) for q in parts], 1)
+                ok = np.all([q['has_pose'] > 0 for q in parts], 0)
             cache[t.video_id] = (v, d['audio'].astype(np.float32), centre, ok)
         v, a, centre, ok = cache[t.video_id]
         m = (centre >= t.start_s) & (centre <= t.end_s) & ok
@@ -72,7 +75,7 @@ def build_rows(target, min_clips=8, feat='pamfn'):
         rows.append(dict(video_id=t.video_id, competition=t.competition, battle_id=t.battle_id, round=t.round,
                          athlete=t.athlete, source=t.source, event=event_of(t.competition), score=float(s),
                          v=v[m], a=a[m]))
-    if feat == 'pose' and rows:
+    if feat != 'pamfn' and rows:
         allv = np.concatenate([r['v'] for r in rows])
         mu, sd = allv.mean(0), allv.std(0) + 1e-6
         for r in rows:

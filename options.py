@@ -78,4 +78,8 @@ parser.add_argument('--clip_mask', type=float, default=0.0,
                     help='ours: probability of zeroing a whole clip (V and A together) during training')
 parser.add_argument('--input_dropout', type=float, default=0.0,
                     help='ours: dropout on the projected V/A tokens before the shared encoder')
+parser.add_argument('--choreo', default='none', choices=['none', 'graph', 'add'],
+                    help='ours (Phase 6): Bailando-style choreographic memory (ours/choreo_feat.py) as MAG^2 code nodes '
+                         '(graph) or added to the visual tokens (add)')
+parser.add_argument('--choreo_ckpt', default=None, help='stage-1 memory, e.g. ./ckpt/choreo_rg.pt')
 parser.add_argument('--score_range', type=int, default=None)

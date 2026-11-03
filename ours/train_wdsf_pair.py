@@ -173,7 +173,7 @@ if __name__ == '__main__':
     p.add_argument('--alpha_ce', type=float, default=0.1)
     p.add_argument('--w_aux', type=float, default=1.0)
     p.add_argument('--wd', type=float, default=1e-4)
-    p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose'])
+    p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose', 'vq', 'vqpose'])
     p.add_argument('--eval_epochs', default='5,10,20,30,40')
     p.add_argument('--inner_val', type=int, default=1, help='select the epoch on a held-out training event')
     main(p.parse_args())

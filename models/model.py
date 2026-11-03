@@ -163,6 +163,13 @@ class MLAVL(nn.Module):
         self.gcn_V = MAGG_Module(hidden_dim, hidden_dim // 2, config.dropout)
         self.gcn_A = MAGG_Module(hidden_dim, hidden_dim // 2, config.dropout)
 
+        # ours (Phase 6, MLAVL + Bailando): frozen choreographic memory (ours/choreo_feat.py); --choreo none|graph|add
+        self.choreo = getattr(config, 'choreo', 'none') or 'none'
+        if self.choreo != 'none':
+            from ours.choreo_feat import ChoreoMemory
+            self.choreo_mem = ChoreoMemory(config.choreo_ckpt)
+            self.proj_code = nn.Sequential(nn.Linear(self.choreo_mem.code_dim, hidden_dim), nn.LayerNorm(hidden_dim))
+
     def get_logits(self, inp, text):
         inp = inp / inp.norm(dim=-1, keepdim=True)
         text = text / text.norm(dim=-1, keepdim=True)
@@ -172,6 +179,9 @@ class MLAVL(nn.Module):
     def forward(self, visual, audio):
         # Shared-Specifc Context Encoder
         b, t, c = visual.shape
+        if self.choreo != 'none':
+            code_idx, code_vec = self.choreo_mem(visual)          # (b, t), (b, t, d)
+            code_tok = self.proj_code(code_vec)                    # (b, t, hidden)
         if self.training and self.clip_mask > 0:  # ours: drop whole clips, aligned across modalities
             keep = (torch.rand(b, t, 1, device=visual.device) >= self.clip_mask).to(visual.dtype)
             visual = visual * keep
@@ -179,6 +189,8 @@ class MLAVL(nn.Module):
         visual = self.proj_visual(visual.transpose(1, 2)).transpose(1, 2)
         audio = self.proj_audio(audio.transpose(1, 2)).transpose(1, 2)
         visual = self.input_dropout(visual)  # ours: identity when --input_dropout 0
+        if self.choreo == 'add':
+            visual = visual + code_tok
         audio = self.input_dropout(audio)
 
         encode_visual = self.SSCEncoder(visual)
@@ -217,7 +229,18 @@ class MLAVL(nn.Module):
         mixed = []
         for batch_idx in range(fusion_TV.shape[0]):
             graph_visual = fusion_TV[batch_idx]
-            mixed.append(self.gcn_V(graph_visual, edge_index))
+            if self.choreo == 'graph':
+                # one node per code this video uses, linked (both ways) only to the clips assigned to it
+                uniq, inv = torch.unique(code_idx[batch_idx], return_inverse=True)
+                node_feat = torch.zeros(len(uniq), code_tok.shape[-1], device=visual.device, dtype=code_tok.dtype)
+                node_feat = node_feat.index_add(0, inv, code_tok[batch_idx]) / torch.bincount(inv, minlength=len(uniq))[:, None]
+                base = num_nodes + num_nodes2
+                clips = torch.arange(num_nodes, device=visual.device)
+                extra = torch.cat([torch.stack([base + inv, clips]), torch.stack([clips, base + inv])], 1)
+                out = self.gcn_V(torch.cat([graph_visual, node_feat], 0), torch.cat([edge_index, extra], 1))
+                mixed.append(out[:base])
+            else:
+                mixed.append(self.gcn_V(graph_visual, edge_index))
         mixed = torch.stack(mixed)
         visual_fea, mixed1 = mixed[:, :num_nodes], mixed[:, num_nodes:]
 
