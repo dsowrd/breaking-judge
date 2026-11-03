@@ -1,0 +1,36 @@
+{
+  "turns": [
+    {
+      "end": 44,
+      "start": 2,
+      "who": "red"
+    },
+    {
+      "end": 88,
+      "start": 44,
+      "who": "blue"
+    },
+    {
+      "end": 130,
+      "start": 93,
+      "who": "red"
+    },
+    {
+      "end": 170,
+      "start": 130,
+      "who": "blue"
+    },
+    {
+      "end": 208,
+      "start": 170,
+      "who": "red"
+    },
+    {
+      "end": 256,
+      "start": 212,
+      "who": "blue"
+    }
+  ],
+  "updated_at": "2026-11-03T12:05:38.490Z",
+  "video_id": "3c02IWZVrNI"
+}

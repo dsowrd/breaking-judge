@@ -1,0 +1,37 @@
+{
+  "note": "3라운드는 유튜브 영상에 없음",
+  "turns": [
+    {
+      "end": 67,
+      "start": 11,
+      "who": "red"
+    },
+    {
+      "end": 124,
+      "start": 70,
+      "who": "blue"
+    },
+    {
+      "end": 182,
+      "start": 136,
+      "who": "red"
+    },
+    {
+      "end": 230,
+      "start": 184,
+      "who": "blue"
+    },
+    {
+      "end": null,
+      "start": null,
+      "who": null
+    },
+    {
+      "end": null,
+      "start": null,
+      "who": null
+    }
+  ],
+  "updated_at": "2026-10-20T02:32:40.193Z",
+  "video_id": "voEHM1WnM4w"
+}

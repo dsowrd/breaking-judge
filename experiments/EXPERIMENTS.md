@@ -621,3 +621,30 @@ segmentation (`WDSF_TURNS=.../wdsf_turns_handcv.csv`, seed 0). Same rounds score
   was measured on them) but the other 291 much worse. Only labelling battles that the detector never saw separates
   (a) from (b): the 38 battles on the labelling page give both the detector IoU on unseen battles and a larger clean
   test set. n = 44–52 rounds per cell, so every number above has a 95% CI of about ±13 points.
+
+### Decisive test: 19 newly labelled (unseen) battles (2026-11-03)
+
+정현도 labelled 19 more battles (ranks 23-41 of the labelling page; the first 22 unchanged). Merged file:
+`/data/mlavl/datasets/wdsf/wdsf_turn_labels_v41.json` (copy in `ours/wdsf/`). Script: `tools/battle/eval_unseen_labels.py`.
+The current turn detector never saw these 19 battles, so their `wdsf_turns.csv` segmentation can be scored directly.
+
+| | turns | start err median | IoU mean | IoU >= 0.5 | videos all turns >= 0.5 |
+|---|---|---|---|---|---|
+| old 22, leave-one-event-out | 104 | 1.8 s | 0.861 | 0.98 | 0.91 |
+| **new 19, unseen** | 102 | 2.5 s | **0.827** | 0.92 | 0.84 |
+
+Segmentation generalises: explanation (b) "the detector fails on the other battles" is ruled out.
+
+Round accuracy of the existing pose pairwise predictions (`pose_*_s*`, seed ensemble for total):
+
+| target | old 22 (n=52/45) | **new 19 (n=51/39)** | rest (n=648/556) |
+|---|---|---|---|
+| total | 0.769 | **0.471** | 0.509 |
+| Execution | 0.756 | 0.513 | 0.552 |
+| Technique | 0.556 | 0.436 | 0.545 |
+
+old 22 vs new 19 (total): Fisher p = 0.0023. The old 22 lead in 14 of 16 events, so it is not one event.
+Blue-win rate: old 22 0.615, new 19 0.451, rest 0.545; mean |margin| 5.07 / 3.85 / 4.99.
+Conclusion: the 73-78% on the hand battles is a property of those 22 battles, not of exact turns and not of the
+detector. With good turns on unseen battles the model is at chance. The "clean subset" claim is withdrawn;
+all 41 labelled battles together give 0.621 (n=103), with no CI lower bound above 0.5 worth claiming.
