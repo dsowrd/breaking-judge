@@ -676,3 +676,30 @@ Nothing beats the second-dancer rule except Execution, where the earlier hand-po
 (p_rule 0.013); with ~30 comparisons in this table one p < 0.01 is expected by chance. The vocabulary criteria
 (Vocabulary, Originality) read literally from the tokens are not predicted either. Conclusion: on WDSF battles the
 choreographic memory does not add a measurable signal; the problem is not the representation of single moves.
+
+### Paper datasets first: RG (feature-level memory, 3 seeds, 2026-11-04)
+
+Question (정현도): does the new module help where MLAVL is known to work, before judging it on breaking? RG and Fis-V
+ship only Video Swin clip features, so the memory is `ours/choreo_feat.py` (VQ-VAE on the training-split clip
+features, K = 128, one code per clip; `ckpt/choreo_rg.pt` val rec 0.535, perplexity 114/128), frozen in stage 2.
+Paper settings otherwise; `scripts/rg_sweep.sh p6_rg ...`, GPUs 0/1/3 = seeds 0/1/2, 2026-11-04 00:58 → 08:40.
+Same protocol as the reproduction (best test ρ over epochs).
+
+| apparatus | reproduction (3 seeds) | `--choreo graph` | `--choreo add` |
+|---|---|---|---|
+| Ball | 0.758 ± 0.009 | 0.753 ± 0.019 | 0.736 ± 0.015 |
+| Clubs | 0.749 ± 0.041 | 0.743 ± 0.040 | 0.719 ± 0.032 |
+| Hoop | 0.786 ± 0.035 | 0.788 ± 0.031 | 0.778 ± 0.039 (best ρ at ep 24–84, MSE there 8.6) |
+| Ribbon | 0.808 ± 0.030 | 0.807 ± 0.026 | 0.828 ± 0.027 (s2 best at ep 11, MSE 12.6) |
+| **avg ρ / best MSE** | **0.775 / 5.10** | **0.773 / 5.16** | **0.765 / 5.27** (MSE @ best ρ 7.19) |
+
+- `graph` (code nodes in MAG²) is indistinguishable from the reproduction on every apparatus (|Δ| ≤ 0.006, well
+  inside one seed std).
+- `add` is worse on Ball/Clubs and its Hoop/Ribbon "gains" are early-epoch peaks with poor MSE at that checkpoint
+  (the best-over-epochs protocol rewards noise); not a real improvement.
+- Fis-V seed 0 (2026-11-04 08:40): graph TES 0.692 / PCS 0.844, add TES 0.698 / PCS 0.843 vs reproduction seed 0
+  0.723 / 0.852. Seeds 1–2 running (`logs/stdout/fisv_*_s{1,2}_choreo_*_1104_0840.log`).
+
+Reading: a codebook learned on the same Video Swin features re-expresses information the visual tokens already
+carry, so it cannot add signal. A Bailando-style memory would need a different input (pose / motion, as in
+Bailando) — which RG/Fis-V do not ship (raw videos would have to be downloaded and re-posed).
