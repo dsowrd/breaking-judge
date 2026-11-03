@@ -648,3 +648,31 @@ Blue-win rate: old 22 0.615, new 19 0.451, rest 0.545; mean |margin| 5.07 / 3.85
 Conclusion: the 73-78% on the hand battles is a property of those 22 battles, not of exact turns and not of the
 detector. With good turns on unseen battles the model is at chance. The "clean subset" claim is withdrawn;
 all 41 labelled battles together give 0.621 (n=103), with no CI lower bound above 0.5 worth claiming.
+
+## Phase 6: MLAVL + Bailando (choreographic memory) (2026-11-03/04)
+
+Code: `tools/battle/choreo_memory.py` (breaking: 2D pose VQ-VAE, upper / lower body, 512 codes each, one code = 0.4 s,
+lower half with root velocity as in Bailando), `ours/train_vocab_pair.py` (vocabulary statistics judge, token
+Transformer judge with code embeddings initialised from the memory), `ours/choreo_feat.py` + `models/model.py --choreo`
+(RG / Fis-V: feature VQ-VAE on the training split, 128 codes, codes as MAG^2 nodes = `graph` or added to the visual
+tokens = `add`). Runs: `scripts/run_choreo.sh`, `scripts/phase6_choreo.sh`, `scripts/rg_sweep.sh p6_rg ...`,
+`scripts/phase6_fisv.sh`. Commit 5c3beca.
+
+Pose memory (WDSF, 313 videos, danced turns only, label-free): val L1 0.100 upper / 0.149 lower vs mean pose 0.212 /
+0.266; perplexity 416 / 408 of 512 (all codes used).
+
+### Breaking, strict evaluation (all rounds, 95% battle-bootstrap CI; rule = second-dancer / blue wins)
+
+| target | rule | probe vq | probe vq+pose | vocab stats | token Transformer (3 seeds) | MLAVL vq | MLAVL vq+pose |
+|---|---|---|---|---|---|---|---|
+| total | 0.543 | 0.543 | 0.562 | 0.548 | 0.516 | 0.555 [0.521, 0.591] (3 seeds) | 0.533 (3 seeds) |
+| Technique | 0.523 | 0.547 | 0.562 | 0.489 | 0.503 | 0.533 | |
+| Vocabulary | 0.549 | 0.555 | 0.543 | 0.535 | 0.535 | 0.537 | |
+| Originality | 0.551 | 0.540 | 0.534 | 0.527 | 0.535 | 0.534 | |
+| Execution | 0.494 | 0.541 | 0.536 | 0.553 (p_rule 0.033) | 0.503 | 0.505 | 0.562 (p_rule 0.009) |
+| Musicality | 0.571 | 0.535 | 0.509 | 0.543 | 0.538 | 0.554 | |
+
+Nothing beats the second-dancer rule except Execution, where the earlier hand-pose MLAVL already gave 0.564
+(p_rule 0.013); with ~30 comparisons in this table one p < 0.01 is expected by chance. The vocabulary criteria
+(Vocabulary, Originality) read literally from the tokens are not predicted either. Conclusion: on WDSF battles the
+choreographic memory does not add a measurable signal; the problem is not the representation of single moves.
