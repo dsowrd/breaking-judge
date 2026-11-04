@@ -166,8 +166,10 @@ class MLAVL(nn.Module):
         # ours (Phase 6, MLAVL + Bailando): frozen choreographic memory (ours/choreo_feat.py); --choreo none|graph|add
         self.choreo = getattr(config, 'choreo', 'none') or 'none'
         self.choreo_src = getattr(config, 'choreo_src', 'feat') or 'feat'
+        self.choreo_ablate = getattr(config, 'choreo_ablate', 'none') or 'none'
+        self.ablate = getattr(config, 'ablate', 'none') or 'none'  # ours: MLAVL component ablation
         if self.choreo != 'none':
-            if self.choreo_src == 'pose':  # ours (Phase 6b): pose codes appended to the visual input (ours/choreo_pose.py)
+            if self.choreo_src.startswith('pose'):  # ours (Phase 6b): pose codes appended to the visual input (ours/choreo_pose.py)
                 from ours.choreo_pose import CODE_DIM, K
                 self.v_dim, self.code_k, code_dim = in_dim, K, 2 * CODE_DIM
             else:
@@ -186,16 +188,24 @@ class MLAVL(nn.Module):
         # Shared-Specifc Context Encoder
         b, t, c = visual.shape
         if self.choreo != 'none':
-            if self.choreo_src == 'pose':
+            if self.choreo_src.startswith('pose'):
                 pose_x, visual = visual[..., self.v_dim:], visual[..., :self.v_dim]
                 c = visual.shape[-1]
                 has = pose_x[..., -1:]
-                code_tok = self.proj_code(pose_x[..., :-3]) * has                         # (b, t, hidden)
-                code_idx = torch.stack([pose_x[..., -3], pose_x[..., -2] + self.code_k], -1).long()  # (b, t, 2)
+                vec, D = pose_x[..., :-3], (pose_x.shape[-1] - 3) // 2
+                ids = [pose_x[..., -3], pose_x[..., -2] + self.code_k]
+                if self.choreo_ablate == 'upper':
+                    vec, ids = torch.cat([vec[..., :D], torch.zeros_like(vec[..., D:])], -1), ids[:1]
+                elif self.choreo_ablate == 'lower':
+                    vec, ids = torch.cat([torch.zeros_like(vec[..., :D]), vec[..., D:]], -1), ids[1:]
+                code_tok = self.proj_code(vec) * has                                      # (b, t, hidden)
+                code_idx = torch.stack(ids, -1).long()                                    # (b, t, n_parts)
                 code_has = has[..., 0] > 0
             else:
                 code_idx, code_vec = self.choreo_mem(visual)          # (b, t), (b, t, d)
                 code_tok = self.proj_code(code_vec)                    # (b, t, hidden)
+        if self.ablate == 'no_audio':
+            audio = torch.zeros_like(audio)
         if self.training and self.clip_mask > 0:  # ours: drop whole clips, aligned across modalities
             keep = (torch.rand(b, t, 1, device=visual.device) >= self.clip_mask).to(visual.dtype)
             visual = visual * keep
@@ -234,7 +244,7 @@ class MLAVL(nn.Module):
             for j in range(num_nodes2):
                 if i != j:
                     edges.append([num_nodes + i, num_nodes + j])
-        for i in range(num_nodes):
+        for i in range(num_nodes if self.ablate != 'no_text_graph' else 0):  # ours: ablation drops text->clip edges
             for j in range(num_nodes2):
                 edges.append([num_nodes + j, i])
         edge_index = torch.tensor(edges, dtype=torch.long, device=visual.device).t().contiguous()
@@ -247,9 +257,10 @@ class MLAVL(nn.Module):
                 # one node per code this video uses, linked (both ways) only to the clips assigned to it
                 ci, ct = code_idx[batch_idx], code_tok[batch_idx]
                 clips = torch.arange(num_nodes, device=visual.device)
-                if self.choreo_src == 'pose':  # one node per upper and per lower code; clips without a pose get none
+                if self.choreo_src.startswith('pose'):  # one node per upper and per lower code; clips without a pose get none
                     m = code_has[batch_idx]
-                    ci, clips, ct = ci[m].reshape(-1), clips[m].repeat_interleave(2), ct[m].repeat_interleave(2, 0)
+                    n = ci.shape[-1]
+                    ci, clips, ct = ci[m].reshape(-1), clips[m].repeat_interleave(n), ct[m].repeat_interleave(n, 0)
                     if len(ci) == 0:
                         mixed.append(self.gcn_V(graph_visual, edge_index))
                         continue

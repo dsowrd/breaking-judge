@@ -82,7 +82,11 @@ parser.add_argument('--choreo', default='none', choices=['none', 'graph', 'add']
                     help='ours (Phase 6): Bailando-style choreographic memory (ours/choreo_feat.py) as MAG^2 code nodes '
                          '(graph) or added to the visual tokens (add)')
 parser.add_argument('--choreo_ckpt', default=None, help='stage-1 memory, e.g. ./ckpt/choreo_rg.pt')
-parser.add_argument('--choreo_src', default='feat', choices=['feat', 'pose'],
+parser.add_argument('--choreo_src', default='feat', choices=['feat', 'pose', 'posecont'],
                     help='ours (Phase 6b): memory over Video Swin features (choreo_feat.py) or over estimated '
                          'poses (tools/aqa/aqa_choreo.py -> ours/choreo_pose.py)')
+parser.add_argument('--choreo_ablate', default='none', choices=['none', 'upper', 'lower', 'shuffle', 'swap'],
+                    help='ours (Phase 6b ablation): one body half only / clip order shuffled / codes of another video')
+parser.add_argument('--ablate', default='none', choices=['none', 'no_audio', 'no_text_graph'],
+                    help='ours: MLAVL component ablation (audio zeroed / no text->clip edges in MAG^2)')
 parser.add_argument('--score_range', type=int, default=None)

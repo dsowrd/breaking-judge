@@ -10,7 +10,9 @@ Poses: tools/aqa/aqa_pose.py (25 fps / stride 3 = 8.33 Hz, so one code = 0.48 s)
 encode -> {features}/choreo_pose/{name}.npz: x (T, 2*CODE_DIM + 3) on the Video Swin clip grid of that video
 (T = len of the PAMFN feature; clip t = frames [t, t+1) * nframes / T): mean quantised upper | lower code vectors of
 the codes whose centre falls in the clip, then the clip's most frequent upper and lower code id, then has_pose.
-The trainer appends x to the Video Swin feature (ours/choreo_pose.py) so crops / padding stay aligned.
+c: the same grid with continuous pose statistics instead of codes (mean / std / mean |change| of the 36 pose
+channels, no VQ; --choreo_src posecont ablation). The trainer appends x (or c) to the Video Swin feature
+(ours/choreo_pose.py) so crops / padding stay aligned.
 """
 import argparse
 import os
@@ -130,7 +132,17 @@ def encode(a):
                         x[t, 2 * D] = np.bincount(ids[0][mk]).argmax()
                         x[t, 2 * D + 1] = np.bincount(ids[1][mk]).argmax()
                         x[t, 2 * D + 2] = 1
-        np.savez(f'{out_dir}/{name}.npz', x=x)
+        c = np.zeros_like(x)                                   # continuous pose statistics (ablation: no VQ)
+        if os.path.exists(p):
+            sclip = np.minimum((z['frame'] * T / int(z['nframes'])).astype(int), T - 1)
+            P = np.concatenate([up, low], 1)                    # (n, 36): joints + root velocity
+            V = np.abs(np.diff(P, axis=0, prepend=P[:1]))
+            for t in range(T):
+                mk = (sclip == t) & z['ok']
+                if mk.sum() >= 2:
+                    c[t, :108] = np.concatenate([P[mk].mean(0), P[mk].std(0), V[mk].mean(0)])
+                    c[t, -1] = 1
+        np.savez(f'{out_dir}/{name}.npz', x=x, c=c)
         cover.append(x[:, -1].mean())
     print(f'{len(lens)} videos encoded, clips with pose {np.mean(cover):.3f} (videos without any: '
           f'{int(np.sum(np.array(cover) == 0))})')
