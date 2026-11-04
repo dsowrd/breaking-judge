@@ -165,10 +165,16 @@ class MLAVL(nn.Module):
 
         # ours (Phase 6, MLAVL + Bailando): frozen choreographic memory (ours/choreo_feat.py); --choreo none|graph|add
         self.choreo = getattr(config, 'choreo', 'none') or 'none'
+        self.choreo_src = getattr(config, 'choreo_src', 'feat') or 'feat'
         if self.choreo != 'none':
-            from ours.choreo_feat import ChoreoMemory
-            self.choreo_mem = ChoreoMemory(config.choreo_ckpt)
-            self.proj_code = nn.Sequential(nn.Linear(self.choreo_mem.code_dim, hidden_dim), nn.LayerNorm(hidden_dim))
+            if self.choreo_src == 'pose':  # ours (Phase 6b): pose codes appended to the visual input (ours/choreo_pose.py)
+                from ours.choreo_pose import CODE_DIM, K
+                self.v_dim, self.code_k, code_dim = in_dim, K, 2 * CODE_DIM
+            else:
+                from ours.choreo_feat import ChoreoMemory
+                self.choreo_mem = ChoreoMemory(config.choreo_ckpt)
+                code_dim = self.choreo_mem.code_dim
+            self.proj_code = nn.Sequential(nn.Linear(code_dim, hidden_dim), nn.LayerNorm(hidden_dim))
 
     def get_logits(self, inp, text):
         inp = inp / inp.norm(dim=-1, keepdim=True)
@@ -180,8 +186,16 @@ class MLAVL(nn.Module):
         # Shared-Specifc Context Encoder
         b, t, c = visual.shape
         if self.choreo != 'none':
-            code_idx, code_vec = self.choreo_mem(visual)          # (b, t), (b, t, d)
-            code_tok = self.proj_code(code_vec)                    # (b, t, hidden)
+            if self.choreo_src == 'pose':
+                pose_x, visual = visual[..., self.v_dim:], visual[..., :self.v_dim]
+                c = visual.shape[-1]
+                has = pose_x[..., -1:]
+                code_tok = self.proj_code(pose_x[..., :-3]) * has                         # (b, t, hidden)
+                code_idx = torch.stack([pose_x[..., -3], pose_x[..., -2] + self.code_k], -1).long()  # (b, t, 2)
+                code_has = has[..., 0] > 0
+            else:
+                code_idx, code_vec = self.choreo_mem(visual)          # (b, t), (b, t, d)
+                code_tok = self.proj_code(code_vec)                    # (b, t, hidden)
         if self.training and self.clip_mask > 0:  # ours: drop whole clips, aligned across modalities
             keep = (torch.rand(b, t, 1, device=visual.device) >= self.clip_mask).to(visual.dtype)
             visual = visual * keep
@@ -231,11 +245,18 @@ class MLAVL(nn.Module):
             graph_visual = fusion_TV[batch_idx]
             if self.choreo == 'graph':
                 # one node per code this video uses, linked (both ways) only to the clips assigned to it
-                uniq, inv = torch.unique(code_idx[batch_idx], return_inverse=True)
-                node_feat = torch.zeros(len(uniq), code_tok.shape[-1], device=visual.device, dtype=code_tok.dtype)
-                node_feat = node_feat.index_add(0, inv, code_tok[batch_idx]) / torch.bincount(inv, minlength=len(uniq))[:, None]
-                base = num_nodes + num_nodes2
+                ci, ct = code_idx[batch_idx], code_tok[batch_idx]
                 clips = torch.arange(num_nodes, device=visual.device)
+                if self.choreo_src == 'pose':  # one node per upper and per lower code; clips without a pose get none
+                    m = code_has[batch_idx]
+                    ci, clips, ct = ci[m].reshape(-1), clips[m].repeat_interleave(2), ct[m].repeat_interleave(2, 0)
+                    if len(ci) == 0:
+                        mixed.append(self.gcn_V(graph_visual, edge_index))
+                        continue
+                uniq, inv = torch.unique(ci, return_inverse=True)
+                node_feat = torch.zeros(len(uniq), ct.shape[-1], device=visual.device, dtype=ct.dtype)
+                node_feat = node_feat.index_add(0, inv, ct) / torch.bincount(inv, minlength=len(uniq))[:, None]
+                base = num_nodes + num_nodes2
                 extra = torch.cat([torch.stack([base + inv, clips]), torch.stack([clips, base + inv])], 1)
                 out = self.gcn_V(torch.cat([graph_visual, node_feat], 0), torch.cat([edge_index, extra], 1))
                 mixed.append(out[:base])
