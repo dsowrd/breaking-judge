@@ -74,13 +74,16 @@ def detect(a):
     model = keypointrcnn_resnet50_fpn(weights=KeypointRCNN_ResNet50_FPN_Weights.COCO_V1).eval().to(dev)
     out_dir = os.path.join(SETS[a.set][1], 'pose_det')
     os.makedirs(out_dir, exist_ok=True)
-    paths = videos(a.set)[a.shard::a.nshards]
+    paths = videos(a.set)[::-1] if a.reverse else videos(a.set)   # --reverse: helpers start from the other end
+    paths = paths[a.shard::a.nshards]
     if a.only:
         paths = [p for p in paths if vid_id(p) in a.only.split(',')]
     for k, path in enumerate(paths):
         dst = os.path.join(out_dir, vid_id(path) + '.npz')
-        if os.path.exists(dst):
+        busy = dst + '.busy'
+        if os.path.exists(dst) or os.path.exists(busy):
             continue
+        open(busy, 'w').close()
         w0, h0, fps, nf = probe(path)
         sx, sy = w0 / W, h0 / H
         F_, KP, BX, SC, batch = [], [], [], [], []
@@ -117,6 +120,7 @@ def detect(a):
         np.savez(dst, frame=np.array(F_, np.int32), kp=np.array(KP, np.float32).reshape(-1, MAXP, 17, 3),
                  box=np.array(BX, np.float32).reshape(-1, MAXP, 4), det_score=np.array(SC, np.float32).reshape(-1, MAXP),
                  fps=fps, nframes=nf, size=np.array([w0, h0]), stride=a.stride)
+        os.remove(busy)
         print(f'[{k + 1}/{len(paths)}] {vid_id(path)}: {len(F_)} frames of {nf}', flush=True)
 
 
@@ -180,6 +184,7 @@ def main():
     p.add_argument('--shard', type=int, default=0)
     p.add_argument('--nshards', type=int, default=1)
     p.add_argument('--only', default='')
+    p.add_argument('--reverse', action='store_true')
     a = p.parse_args()
     detect(a) if a.cmd == 'detect' else track(a)
 

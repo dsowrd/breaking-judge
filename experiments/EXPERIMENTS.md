@@ -703,3 +703,19 @@ Same protocol as the reproduction (best test ρ over epochs).
 Reading: a codebook learned on the same Video Swin features re-expresses information the visual tokens already
 carry, so it cannot add signal. A Bailando-style memory would need a different input (pose / motion, as in
 Bailando) — which RG/Fis-V do not ship (raw videos would have to be downloaded and re-posed).
+
+### Paper datasets first: Fis-V (feature-level memory, 3 seeds, 2026-11-04)
+
+`ckpt/choreo_fisv.pt` (val rec 0.615, perplexity 110/128); `scripts/phase6_fisv.sh`, seeds 1–2 finished 2026-11-04 ~15:00.
+
+| score | reproduction (3 seeds) | `--choreo graph` | `--choreo add` |
+|---|---|---|---|
+| TES | 0.723 ± 0.013 | 0.700 ± 0.008 | 0.690 ± 0.014 |
+| PCS | 0.852 | 0.848 ± 0.005 | 0.844 ± 0.001 |
+| **avg ρ / best MSE** | **0.788** / 20.77, 7.93 | **0.774** / 21.15, 7.78 | **0.767** / 22.52, 7.98 |
+
+Both variants lose TES ranking (−0.02 to −0.03, about two seed stds) and leave PCS unchanged. Together with RG:
+a memory learned on the same Video Swin features adds no information and slightly hurts. Next (Phase 6b): the memory
+on estimated poses, as in Bailando — raw RG / Fis-V videos downloaded 2026-11-04 (research use only),
+`tools/aqa/aqa_pose.py` → `tools/aqa/aqa_choreo.py` → `--choreo_src pose`; unattended pipeline
+`scripts/phase6b_pipeline.sh` (log `logs/aqa_pose/pipeline.log`).
