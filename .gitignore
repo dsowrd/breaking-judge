@@ -43,3 +43,9 @@ downloads/
 .vscode/
 .idea/
 ckpt
+
+# ---- local presentation workspace (decks hold dataset clips: kept on Drive, never in git) ----
+presentations/
+slides/*/assets/clips/
+slides/*/data/
+*.pptx
