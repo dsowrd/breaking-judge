@@ -296,13 +296,16 @@ for k, (big, lab, sub_) in enumerate(calls):
 textbox(s, 7.95, 4.98, 5.2, 0.6, [('How codes enter matters: ', {'b': True}),
                                   ('graph nodes 0.778 (no gain); adding to video tokens helps', {})],
         size=13, color=NAVY)
-bar(s, 5.72, 'Caution', 'Per-apparatus gains (+0.016 – 0.036) ≈ one seed std → checked by the controls on the next slide', size=15)
+bar(s, 5.72, 'Check', 'Codes from another video erase the gain (0.772, p = 0.005) → it comes from the athlete\'s own motion', size=15)
 foot(s, 'All values: mean of 3 seeds; best test ρ and best test MSE during training (same protocol as the reproduction)')
 
 # ================================================================ 7. ablation & plan
 s = S[6]; clear(s); title(s, 'Ablation & Plan')
-done = len(ABL) >= 7
-lead(s, 'Is the gain really from pose? Control experiments' + ('' if done else ' (running, done 11/6)'))
+KEYS = ('swap', 'shuffle', 'posecont', 'upper', 'lower', 'no_audio', 'no_text_graph')
+done = all(k in ABL for k in KEYS)
+PV = ABL.get('p', {})
+lead(s, ("The gain needs the athlete's own, time-aligned lower-body motion" if done
+         else 'Is the gain really from pose? Control experiments (running, done 11/6)'))
 
 
 def v(k, base=0.798):
@@ -311,29 +314,33 @@ def v(k, base=0.798):
     return f'{ABL[k]:.3f} ({ABL[k] - base:+.3f})'
 
 
-rows = [['Question', 'Experiment', 'RG ρ (Δ)'],
-        ['Baseline: pose codes', '—', '0.798'],
-        ["Is the video's own motion needed?", 'Codes from another video', v('swap')],
-        ['Does the order matter?', 'Shuffle clips within the video', v('shuffle')],
-        ['Is the codebook needed?', 'Continuous pose statistics instead', v('posecont')],
-        ['Upper or lower body?', 'Upper-body codes only', v('upper')],
-        ['', 'Lower-body codes only', v('lower')],
-        ['Baseline: reproduction', '—', '0.775'],
-        ["Are MLAVL's music / text needed?", 'Remove the music input', v('no_audio', 0.775)],
-        ['', 'Remove the action-text graph', v('no_text_graph', 0.775)]]
-table(s, 0.44, 1.6, 8.15, rows, [3.3, 3.2, 1.65], row_h=0.39, size=13, hl=(1, 7), bold_rows=(1, 7), aligns=['l', 'l', 'c'])
+def pv(k):
+    return '' if k not in PV else (f'{PV[k]:.3f}' if PV[k] < 0.1 else f'{PV[k]:.2f}')
+
+
+rows = [['Question', 'Experiment', 'RG ρ (Δ)', 'p'],
+        ['Baseline: pose codes', '—', '0.798', ''],
+        ["Is the video's own motion needed?", 'Codes from another video', v('swap'), pv('swap')],
+        ['Does the timing matter?', 'Shuffle clips within the video', v('shuffle'), pv('shuffle')],
+        ['Is the codebook needed?', 'Continuous pose statistics instead', v('posecont'), pv('posecont')],
+        ['Upper or lower body?', 'Upper-body codes only', v('upper'), pv('upper')],
+        ['', 'Lower-body codes only', v('lower'), pv('lower')],
+        ['Baseline: reproduction', '—', '0.775', ''],
+        ["Are MLAVL's music / text needed?", 'Remove the music input', v('no_audio', 0.775), pv('no_audio')],
+        ['', 'Remove the action-text graph', v('no_text_graph', 0.775), pv('no_text_graph')]]
+table(s, 0.44, 1.6, 8.15, rows, [2.95, 2.85, 1.6, 0.75], row_h=0.39, size=13, hl=(1, 7), bold_rows=(1, 7), aligns=['l', 'l', 'c', 'c'])
 panel(s, 8.85, 1.6, 4.3, 3.96, LIGHT)
 bullets(s, 8.9, 1.62, 4.2, 3.9, [
-    ('h', 'How to read'),
-    ('s', 'Large drop from 0.798 → that part contributes'),
-    ('s', 'Drop to 0.775 → all of the gain comes from it'),
-    ('s', 'Last two rows: MLAVL parts removed, no pose (vs. 0.775)'),
+    ('h', 'What we learned'),
+    ('s', "Own video, right timing: other video / shuffled → gain lost"),
+    ('s', 'Lower body (hips, legs) carries the gain'),
+    ('s', 'Continuous pose works as well as codes → pose is the key; codes give readable motion units'),
+    ('s', "MLAVL's music and text graph: no measurable effect here"),
     ('h', 'Until the final'),
-    ('s', 'Apply the same to breaking battles'),
-    ('s', 'Why skating TES does not improve'),
-], hsz=16, ssz=13.5, space=250)
+    ('s', 'Bailando Beat Align as input (running) · breaking battles'),
+], hsz=15, ssz=12.5, space=180)
 bar(s, 5.72, 'Roadmap', '① Reproduction ✓  →  ② Pose codebook improves RG ✓  →  ③ Controls' + (' ✓' if done else '') + '  →  ④ Breaking (final)', size=15)
-foot(s, 'All experiments: 4 RG apparatus × 3 seeds, same training settings · Thank you')
+foot(s, 'All: 4 RG apparatus × 3 seeds, same settings · p: paired t-test over the 12 runs vs. the bold baseline · Thank you')
 
 prs.save(OUT)
 print('saved', OUT)

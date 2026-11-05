@@ -1,1 +1,2 @@
-{"swap": 0.772, "upper": 0.788}
+{"swap": 0.772, "shuffle": 0.787, "posecont": 0.801, "upper": 0.788, "lower": 0.796, "no_audio": 0.777, "no_text_graph": 0.779,
+ "p": {"swap": 0.005, "shuffle": 0.026, "posecont": 0.71, "upper": 0.026, "lower": 0.52, "no_audio": 0.65, "no_text_graph": 0.48}}

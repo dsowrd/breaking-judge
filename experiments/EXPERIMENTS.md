@@ -750,3 +750,36 @@ vs mean-pose 0.12–0.17, perplexity 418–463 / 512), per-clip code input `ours
 - Ablations moved to RG (where the gain is), `--choreo add`, 3 seeds, tmux `p6c_rgA` (swap, shuffle, posecont,
   no_audio) and `p6c_rgB` (upper, lower, no_text_graph), started 2026-11-05 09:05; the Fis-V queue
   (`scripts/phase6b_ablation.sh`) was stopped before it launched anything.
+
+### RG ablations of the pose memory (3 seeds, 2026-11-05 09:05 → 23:31)
+
+`--choreo add` unless noted; GPU 0/1/3; best test ρ over epochs (same protocol). Δ and paired t-test over the 12
+runs (4 apparatus × 3 seeds) against the bold baseline. No multiple-comparison correction (7 tests; Bonferroni 0.007
+keeps only swap).
+
+| question | setting | RG avg ρ (Fisher z) | best MSE | Δ | pos / 12 | p |
+|---|---|---|---|---|---|---|
+| **baseline: pose add** | | **0.798** | 4.84 | | | |
+| own video's motion? | `swap` codes of another video (fixed permutation) | 0.772 (0.775) | 5.37 | −0.026 | 10 | 0.005 |
+| timing? | `shuffle` clips within the video | 0.787 (0.789) | 4.99 | −0.012 | 9 | 0.026 |
+| codebook needed? | `posecont` continuous pose statistics, no VQ | 0.801 (0.804) | 4.88 | +0.003 | 7 | 0.71 |
+| upper or lower? | `upper` codes only | 0.788 (0.789) | 4.92 | −0.010 | 10 | 0.026 |
+| | `lower` codes only | 0.796 (0.796) | 5.02 | −0.003 | 7 | 0.52 |
+| **baseline: reproduction** (no pose) | | **0.775** | 5.10 | | | |
+| MLAVL music? | `no_audio` | 0.777 (0.778) | 5.26 | +0.002 | 6 | 0.65 |
+| MLAVL text graph? | `no_text_graph` | 0.779 (0.780) | 5.22 | +0.004 | 6 | 0.48 |
+
+(pos / 12 = runs where the bold baseline is higher than the ablation.)
+Other contrasts vs reproduction: pose add +0.023 (p = 0.003), posecont +0.026 (p = 0.018), lower +0.020 (p = 0.002),
+shuffle +0.011 (p = 0.15).
+
+Reading:
+- The gain needs the athlete's own motion at the right time: another video's codes erase it (0.772 ≈ 0.775), shuffling
+  the clip order keeps only half. Hoop is the exception (swap 0.811 ≥ pose 0.802).
+- Lower body (hips, legs, root velocity) carries almost all of it; upper-only keeps less than half.
+- The VQ step itself is not what helps: continuous pose statistics match the codebook (0.801 vs 0.798). What carries
+  over from Bailando is the pose input split into upper / lower body; the codebook gives the same accuracy as
+  discrete, readable 0.48 s motion units.
+- In our reproduction, removing MLAVL's audio input or its action-text graph changes nothing on RG (p > 0.4). Reported
+  as observed; our reproduction is below the paper (0.775 vs 0.849), so this is not a claim about the paper's setting.
+- Next: Phase 6c (Bailando Beat Align per clip, `--extra`), queue `scripts/phase6c_queue.sh` (tmux `p6d_q`).
