@@ -177,6 +177,18 @@ class MLAVL(nn.Module):
                 self.choreo_mem = ChoreoMemory(config.choreo_ckpt)
                 code_dim = self.choreo_mem.code_dim
             self.proj_code = nn.Sequential(nn.Linear(code_dim, hidden_dim), nn.LayerNorm(hidden_dim))
+        # ours (Phase 6c): extra per-clip inputs appended to the visual feature (ours/extra_inputs.py), --extra pose,beat
+        self.extra = [s for s in (getattr(config, 'extra', '') or '').split(',') if s]
+        if self.extra:
+            assert self.choreo == 'none', '--extra replaces --choreo (use --extra pose for the pose memory)'
+            from ours.extra_inputs import DIMS, HAS
+            self.in_dim, self.extra_dims, self.extra_has = in_dim, DIMS, HAS
+            self.extra_proj = nn.ModuleDict()
+            for s in self.extra:
+                d = DIMS[s] - int(HAS[s])
+                self.extra_proj[s] = (nn.Sequential(nn.Linear(d, d // 2), nn.LayerNorm(d // 2), nn.ReLU(True),
+                                                    nn.Linear(d // 2, hidden_dim), nn.LayerNorm(hidden_dim))
+                                      if d > 256 else nn.Sequential(nn.Linear(d, hidden_dim), nn.LayerNorm(hidden_dim)))
 
     def get_logits(self, inp, text):
         inp = inp / inp.norm(dim=-1, keepdim=True)
@@ -204,6 +216,15 @@ class MLAVL(nn.Module):
             else:
                 code_idx, code_vec = self.choreo_mem(visual)          # (b, t), (b, t, d)
                 code_tok = self.proj_code(code_vec)                    # (b, t, hidden)
+        extra_tok = None
+        if self.extra:  # ours (Phase 6c): split the appended inputs off, project each, sum
+            rest, visual = visual[..., self.in_dim:], visual[..., :self.in_dim]
+            c, o, extra_tok = self.in_dim, 0, 0
+            for s in self.extra:
+                x = rest[..., o:o + self.extra_dims[s]]
+                o += self.extra_dims[s]
+                extra_tok = extra_tok + (self.extra_proj[s](x[..., :-1]) * x[..., -1:] if self.extra_has[s]
+                                         else self.extra_proj[s](x))
         if self.ablate == 'no_audio':
             audio = torch.zeros_like(audio)
         if self.training and self.clip_mask > 0:  # ours: drop whole clips, aligned across modalities
@@ -215,6 +236,8 @@ class MLAVL(nn.Module):
         visual = self.input_dropout(visual)  # ours: identity when --input_dropout 0
         if self.choreo == 'add':
             visual = visual + code_tok
+        if extra_tok is not None:
+            visual = visual + extra_tok
         audio = self.input_dropout(audio)
 
         encode_visual = self.SSCEncoder(visual)

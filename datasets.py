@@ -23,6 +23,7 @@ class FS1000Dataset(Dataset):
         self.clip_num = clip_num
         self.choreo_pose = args is not None and getattr(args, 'choreo_src', 'feat').startswith('pose')  # ours (Phase 6b)
         self.choreo_opts = dict(src=getattr(args, 'choreo_src', 'feat'), ablate=getattr(args, 'choreo_ablate', 'none')) if args is not None else {}
+        self.extra = [s for s in (getattr(args, 'extra', '') or '').split(',') if s] if args is not None else []  # ours (Phase 6c)
         self.labels = self.read_label(label_path, action_type)
         classes_all = pd.read_csv(action_list)
         self.action_list = classes_all['name'].values.tolist()
@@ -104,6 +105,7 @@ class FisVDataset(Dataset):
         self.clip_num = clip_num
         self.choreo_pose = args is not None and getattr(args, 'choreo_src', 'feat').startswith('pose')  # ours (Phase 6b)
         self.choreo_opts = dict(src=getattr(args, 'choreo_src', 'feat'), ablate=getattr(args, 'choreo_ablate', 'none')) if args is not None else {}
+        self.extra = [s for s in (getattr(args, 'extra', '') or '').split(',') if s] if args is not None else []  # ours (Phase 6c)
         self.labels = self.read_label(label_path, action_type)
         classes_all = pd.read_csv(action_list)
         self.action_list = classes_all['name'].values.tolist()
@@ -128,6 +130,9 @@ class FisVDataset(Dataset):
         if self.choreo_pose:  # ours (Phase 6b): append pose codes on the same clip grid
             from ours.choreo_pose import attach
             video_feat = attach(video_feat, self.labels[idx][0], self.video_path, **self.choreo_opts)
+        if self.extra:  # ours (Phase 6c): extra per-clip inputs on the same clip grid (ours/extra_inputs.py)
+            from ours.extra_inputs import attach as attach_extra
+            video_feat = attach_extra(video_feat, self.labels[idx][0], self.video_path, self.extra)
         audio_feat = np.load(self.audio_path, allow_pickle=True).item()[self.labels[idx][0]]
         #
         # temporal random crop or padding
@@ -180,6 +185,7 @@ class RGDataset(Dataset):
         self.clip_num = clip_num
         self.choreo_pose = args is not None and getattr(args, 'choreo_src', 'feat').startswith('pose')  # ours (Phase 6b)
         self.choreo_opts = dict(src=getattr(args, 'choreo_src', 'feat'), ablate=getattr(args, 'choreo_ablate', 'none')) if args is not None else {}
+        self.extra = [s for s in (getattr(args, 'extra', '') or '').split(',') if s] if args is not None else []  # ours (Phase 6c)
         self.labels = self.read_label(label_path, action_type)
         classes_all = pd.read_csv(action_list)
         self.action_list = classes_all['name'].values.tolist()
@@ -205,6 +211,9 @@ class RGDataset(Dataset):
         if self.choreo_pose:  # ours (Phase 6b): append pose codes on the same clip grid
             from ours.choreo_pose import attach
             video_feat = attach(video_feat, self.labels[idx][0], self.video_path, **self.choreo_opts)
+        if self.extra:  # ours (Phase 6c): extra per-clip inputs on the same clip grid (ours/extra_inputs.py)
+            from ours.extra_inputs import attach as attach_extra
+            video_feat = attach_extra(video_feat, self.labels[idx][0], self.video_path, self.extra)
         audio_feat = np.load(self.audio_path, allow_pickle=True).item()[self.labels[idx][0]]
         #
         # temporal random crop or padding
@@ -252,6 +261,7 @@ class LOGODataset(Dataset):
         self.clip_num = clip_num
         self.choreo_pose = args is not None and getattr(args, 'choreo_src', 'feat').startswith('pose')  # ours (Phase 6b)
         self.choreo_opts = dict(src=getattr(args, 'choreo_src', 'feat'), ablate=getattr(args, 'choreo_ablate', 'none')) if args is not None else {}
+        self.extra = [s for s in (getattr(args, 'extra', '') or '').split(',') if s] if args is not None else []  # ours (Phase 6c)
         with open('./LOGO/LOGO Anno&Split/anno_dict.pkl', 'rb') as f:
             self.label_dict = pickle.load(f)
         self.labels = self.read_label(label_path)

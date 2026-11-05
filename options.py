@@ -87,6 +87,8 @@ parser.add_argument('--choreo_src', default='feat', choices=['feat', 'pose', 'po
                          'poses (tools/aqa/aqa_choreo.py -> ours/choreo_pose.py)')
 parser.add_argument('--choreo_ablate', default='none', choices=['none', 'upper', 'lower', 'shuffle', 'swap'],
                     help='ours (Phase 6b ablation): one body half only / clip order shuffled / codes of another video')
+parser.add_argument('--extra', default='', help='ours (Phase 6c): comma list of extra per-clip inputs added to the visual '
+                    'tokens: pose, posecont, beat, flow (ours/extra_inputs.py)')
 parser.add_argument('--ablate', default='none', choices=['none', 'no_audio', 'no_text_graph'],
                     help='ours: MLAVL component ablation (audio zeroed / no text->clip edges in MAG^2)')
 parser.add_argument('--score_range', type=int, default=None)
