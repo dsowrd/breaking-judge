@@ -155,7 +155,7 @@ CUDA_VISIBLE_DEVICES=0 $MLAVL_PY main.py ...
 - [x] conda 환경 구성, `torch.cuda.is_available()`로 GPU 0/1/3 확인 (2026-10-11, 4절 참조)
 - [x] 3절의 함정 처리: `--dataset` 인자, CLIP 제거 + 텍스트 feature 로드(`--text_feature`, `--use_clip`), CE 가중치 인자(`--alpha_ce`). `scripts/smoke_test.py`로 RG/FS1000 설정 forward+backward 확인
 - [x] `.gitignore`, `experiments/EXPERIMENTS.md`, `scripts/env.sh` 추가. 커밋돼 있던 `__pycache__` 추적 해제
-- [x] 브레이킹 무브 어휘 초안 `ours/vocab/action-label_BREAKING.csv` (36 moves, `--n_text 36`). 정현도 검토 전
+- [x] 브레이킹 무브 어휘 초안 `ours/vocab/action-label_BREAKING.csv` (36 moves, `--n_text 36`). 2026-11-05 정현도 확정
 - [x] HDD 마운트 → `MLAVL_DATA=/data/mlavl` (2026-10-11)
 - [x] BRACE release(keypoint, audio feature) + annotations, 올림픽 2024 결과집 PDF를 `/data/mlavl/datasets/`에 다운로드 (Phase 4 선행)
 - [x] RG·Fis-V feature(PAMFN) 다운로드 완료 (정현도가 브라우저로 받음, 2026-10-11). `/data/mlavl/features/pamfn_release.zip`(4.0GB 원본 보관) → `pamfn_data/`에 압축 해제, `features/RG/`, `features/FISV/`에 MLAVL이 기대하는 이름으로 symlink
@@ -414,7 +414,7 @@ MLAVL BibTeX (공식 README에서 그대로 가져옴):
 - [ ] RG·FS1000 원본 영상 확보 가능 여부 → pose branch를 공개 벤치마크에서도 할지 결정 (조사 중, 결과는 아래 "조사 결과"에 기록)
 - [x] 외부 인터넷: 가능 (4절). NAS: 미마운트, 주소 필요. HDD: `/dev/sdb1` 미마운트, 사람이 sudo로 마운트해야 함 (4절)
 - [ ] 올림픽 배틀 전체 영상 확보 가능 여부 (조사 중)
-- [ ] 브레이킹 무브 어휘 최종 목록: 초안 `ours/vocab/action-label_BREAKING.csv` 작성됨, 정현도 검토 필요
+- [x] 브레이킹 무브 어휘 최종 목록: `ours/vocab/action-label_BREAKING.csv` 초안(36 moves) 그대로 **정현도 확정 (2026-11-05)**
 - [x] GitHub: 계정 `dsowrd`, 저장소 `breaking-judge`(private, 2026-10-21 `mlavl-dance-battle`에서 이름 변경 결정, 2026-11-03 GitHub에서 변경 완료, origin = `git@github-mlavl:dsowrd/breaking-judge.git`), 인증은 SSH deploy key(`~/.ssh/mlavl_deploy`, alias `github-mlavl`). 로컬 git identity는 `dsowrd <dsowrd123@gmail.com>`로 설정(저장소 로컬 config). GitHub 계정 이메일과 다르면 커밋이 계정에 연결되지 않으니 확인
 - [x] 저장소 공개 여부: **당분간 private 유지** (정현도, 2026-10-11). public 전환과 저자 연락은 나중에 다시 결정
 
