@@ -160,7 +160,7 @@ def clip_overlay(vid, codes, name, dur=8.0, W=960, H=540, start=None, ticker=Tru
                 draw_pose(dr, pk[0], sx, sy, lw=max(int(H / 100), 4))
             c = pose.code(f)
             if ticker and c is not None and c[2] >= 0.5:
-                label(dr, (24, H - 62), f'상체 #{int(c[0]):03d}   하체 #{int(c[1]):03d}', int(H / 20))
+                label(dr, (24, H - 62), f'Upper #{int(c[0]):03d}   Lower #{int(c[1]):03d}', int(H / 20))
         wr.stdin.write(im.tobytes())
     wr.stdin.close(); wr.wait()
     print(name, vid, f'{f0 / fps:.1f}s +{dur}s')
@@ -192,8 +192,8 @@ def clip_same_code(items, code, name, half=1.0, T=480, H=360):
             on = c is not None and int(c[0]) == code
             if on:
                 dr.rectangle([2, 2, T - 3, H - 3], outline=(46, 204, 113), width=6)
-            label(dr, (14, 12), {'Ball': '공', 'Clubs': '곤봉', 'Hoop': '후프', 'Ribbon': '리본'}[vid.split('_')[0]], 20)
-            label(dr, (T - 112, H - 44), f'상체 #{int(c[0]):03d}' if c is not None else '', 18,
+            label(dr, (14, 12), vid.split('_')[0], 20)
+            label(dr, (T - 128, H - 44), f'Upper #{int(c[0]):03d}' if c is not None else '', 18,
                   bg=(46, 160, 90, 230) if on else (11, 44, 74, 200))
             ims.append(im)
         tiles.append(ims)
@@ -225,7 +225,7 @@ def clip_grid_raw(vids, name, dur=6.0, T=480, H=360, start_after=15):
         cx = np.clip((x0 + x1) / 2 - cw / 2, 0, w0 - cw); cy = np.clip((y0 + y1) / 2 - ch / 2, 0, h0 - ch)
         ims = []
         for im in frames(path, f0 / fps, dur, T, H, crop=f'{int(cw)}:{int(ch)}:{int(cx)}:{int(cy)}'):
-            label(ImageDraw.Draw(im, 'RGBA'), (14, 12), {'Ball': '공', 'Clubs': '곤봉', 'Hoop': '후프', 'Ribbon': '리본'}[vid.split('_')[0]], 20)
+            label(ImageDraw.Draw(im, 'RGBA'), (14, 12), vid.split('_')[0], 20)
             ims.append(im)
         tiles.append(ims)
     n = min(len(t) for t in tiles)

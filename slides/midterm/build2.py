@@ -29,7 +29,7 @@ DARK = '1A1A1A'
 
 
 def lead(s, text):
-    textbox(s, 0.44, 0.98, 12.7, 0.5, text, size=20, color=NAVY, bold=True)
+    textbox(s, 0.44, 0.98, 12.7, 0.5, text, size=18, color=NAVY, bold=True)
 
 
 def box(s, x, y, w, h, lines, fill=LIGHT, line=None, size=14, color=NAVY, dash=False, align='ctr', radius=0.08):
@@ -147,12 +147,13 @@ def videos(s, specs):
 
 
 # ================================================================ 1. cover
+# Slide text is in English (about half of the audience is international); the talk and the script stay in Korean.
 s = S[0]
 find(s, 'TextBox 1').text_frame.paragraphs[0].runs[0].text = 'Midterm Presentation'
 for r in find(s, 'TextBox 1').text_frame.paragraphs[0].runs[1:]:
     r.text = ''
 sub = find(s, 'TextBox 16', 0).text_frame
-sub.paragraphs[0].runs[0].text = 'MLAVL 재현 + 1차 개선: 춤 동작 사전(Bailando)을 더한 심판 점수 예측'
+sub.paragraphs[0].runs[0].text = 'Reproducing MLAVL + 1st improvement: a Bailando pose codebook for judge-score prediction'
 for r in sub.paragraphs[0].runs[1:]:
     r.text = ''
 for p in sub.paragraphs[1:]:
@@ -163,7 +164,7 @@ for r in dp.runs[1:]:
     r.text = ''
 find(s, 'TextBox 20').text_frame.paragraphs[0].runs[0].text = 'CVPR 2025'
 for k, txt in ((1, 'Base: MLAVL, Xu et al., “Language-Guided Audio-Visual Learning for Long-Term Sports Assessment”'),
-               (2, '+ Bailando (Siyao et al., CVPR 2022)의 choreographic memory · Code: github.com/XuHuangbiao/MLAVL')):
+               (2, '+ choreographic memory of Bailando (Siyao et al., CVPR 2022) · Code: github.com/XuHuangbiao/MLAVL')):
     tf = find(s, 'TextBox 16', k).text_frame
     tf.paragraphs[0].runs[0].text = txt
     for r in tf.paragraphs[0].runs[1:]:
@@ -179,84 +180,84 @@ videos(s, [('fisv154_raw', 7.0, 5.45, 2.3, 1.29), ('rg_ribbon010_raw', 9.45, 5.4
 
 # ================================================================ 2. task & approach
 s = S[1]; clear(s); title(s, 'Task & Approach')
-lead(s, '긴 경기 영상을 보고 심판 점수를 예측하는 MLAVL에, Bailando의 ‘춤 동작 사전’을 더해 개선한다')
-ins = [('영상 클립', '1.3초 단위로 자른 경기 영상'), ('음악', '경기 배경음악'),
-       ('동작 설명 텍스트', '‘던지고 받기’, ‘나선’ …')]
+lead(s, "MLAVL scores long performance videos; we add Bailando's dance-move codebook")
+ins = [('Video clips', '1.3 s routine segments'), ('Music', 'background music'),
+       ('Action text', '“throw and catch”, “spirals”')]
 for k, (h_, l_) in enumerate(ins):
     box(s, 0.44, 1.7 + k * 0.85, 2.7, 0.72, [h_, (l_, {'size': 12.5, 'b': False, 'c': BLUE})], size=14)
     arr(s, 3.22, 1.9 + k * 0.85)
-box(s, 0.44, 4.25, 2.7, 0.75, ['+ 선수 포즈의 동작 코드', ('Bailando 동작 사전 (ours)', {'size': 12.5, 'b': False, 'c': '2E7D32'})],
+box(s, 0.44, 4.25, 2.7, 0.75, ['+ Pose codes', ('Bailando codebook (ours)', {'size': 12.5, 'b': False, 'c': '2E7D32'})],
     fill=GREEN, line='2E7D32', dash=True, size=14, color='1B5E20')
 arr(s, 3.22, 4.47, color='66BB6A')
 box(s, 3.7, 1.7, 2.45, 3.3, ['MLAVL', ('CVPR 2025', {'size': 12, 'b': False, 'c': 'C9D6E3'}), ('', {'size': 8}),
-                             ('동작 텍스트 그래프로', {'size': 13.5, 'b': False, 'c': 'FFFFFF'}),
-                             ('클립을 안내하고', {'size': 13.5, 'b': False, 'c': 'FFFFFF'}),
-                             ('영상·음악을 교차 결합', {'size': 13.5, 'b': False, 'c': 'FFFFFF'})],
+                             ('action-text graph', {'size': 13.5, 'b': False, 'c': 'FFFFFF'}),
+                             ('guides the clips;', {'size': 13.5, 'b': False, 'c': 'FFFFFF'}),
+                             ('video × music fusion', {'size': 13.5, 'b': False, 'c': 'FFFFFF'})],
     fill=NAVY, size=20, color='FFFFFF')
 arr(s, 6.23, 3.18)
-box(s, 6.72, 2.75, 1.45, 1.2, ['심판 점수', ('예측', {'size': 15, 'b': True})], fill='FFFFFF', line=NAVY, size=13.5)
+box(s, 6.72, 2.75, 1.45, 1.2, ['Judge score', ('prediction', {'size': 15, 'b': True})], fill='FFFFFF', line=NAVY, size=13.5)
 panel(s, 8.45, 1.65, 4.7, 3.4)
-textbox(s, 8.5, 3.22, 2.05, 0.3, [('리듬체조', {'b': True}), (' · 1,000편', {})], size=12, color=NAVY, align='ctr')
-textbox(s, 10.5, 3.22, 2.6, 0.3, [('피겨', {'b': True}), (' · 500편 · 예: 김연아', {})], size=12, color=NAVY, align='ctr')
+textbox(s, 8.5, 3.22, 2.05, 0.3, [('Gymnastics', {'b': True}), (' · 1,000', {})], size=11.5, color=NAVY, align='ctr')
+textbox(s, 10.5, 3.22, 2.6, 0.3, [('Skating', {'b': True}), (' · 500 (Kim Yuna)', {})], size=11.5, color=NAVY, align='ctr')
 bullets(s, 8.5, 3.62, 4.6, 1.4, [
-    ('s', [('ρ', {'b': True}), (': 예측과 심판 점수의 순위 일치도 (1이 완벽)', {})]),
-    ('s', [('MSE', {'b': True}), (': 점수 오차 (낮을수록 좋음)', {})]),
-    ('s', [('점수', {'b': True}), (': RG 총점 · 피겨 TES 기술 / PCS 예술', {})]),
+    ('s', [('ρ', {'b': True}), (': rank match with judges (1 = best)', {})]),
+    ('s', [('MSE', {'b': True}), (': score error (lower = better)', {})]),
+    ('s', [('Scores', {'b': True}), (': RG total; skating TES / PCS', {})]),
 ], ssz=13, space=250)
 videos(s, [('rg_4app_raw', 8.55, 1.75, 1.92, 1.44), ('fisv154_raw', 10.55, 1.75, 2.5, 1.41)])
-bar(s, 5.72, '진행 순서', '① 논문 재현  →  ② 개선 모듈을 정답이 확실한 논문 데이터셋에서 먼저 검증  →  ③ 브레이킹 배틀 심사에 적용', size=15)
-foot(s, 'MLAVL (CVPR 2025) · Bailando (CVPR 2022) · RG: Zeng et al., MM 2020 · Fis-V: Xu et al., TCSVT 2019 (#154 = 2014 소치 쇼트)')
+bar(s, 5.72, 'Plan', '① Reproduce  →  ② Validate the module on the paper datasets first  →  ③ Apply to breaking battles', size=15)
+foot(s, 'MLAVL (CVPR 25) · Bailando (CVPR 22) · RG: Zeng et al., MM 20 · Fis-V: Xu et al., TCSVT 19 (#154 = Sochi 2014 short program)')
 
 # ================================================================ 3. reproduction
 s = S[2]; clear(s); title(s, 'Reproduction')
-lead(s, '논문 설정 그대로 재현: 피겨 예술 점수는 거의 같고, 리듬체조는 논문보다 0.07 낮다')
+lead(s, 'Reproduced with paper settings: skating PCS matches, gymnastics is 0.07 lower')
 chart(s, 0.44, 1.55, 7.45, 4.05, ['RG Ball', 'RG Clubs', 'RG Hoop', 'RG Ribbon', 'Fis-V TES', 'Fis-V PCS'],
-      [('논문 보고값', (0.826, 0.829, 0.871, 0.866, 0.766, 0.863), GRAYBAR),
-       ('재현 (3번 실행 평균)', (0.758, 0.749, 0.786, 0.808, 0.723, 0.852), BLUE)],
-      0.60, 0.90, 'Spearman ρ (높을수록 좋음)', fmt='0.00')
-textbox(s, 8.15, 1.6, 5.0, 0.4, '격차에 대해 확인한 것', size=16, color=NAVY, bold=True)
-causes = [('① 입력·설정은 논문과 같음', '저자와 같은 공개 특징(PAMFN), 논문 하이퍼파라미터', '정규화 실험 96회로도 격차는 그대로'),
-          ('② 공개 코드 ≠ 논문 모델', '학습 파라미터 6.99M (논문 3.82M)', '→ 논문 실험과 같은 코드인지 알 수 없음'),
-          ('③ 논문은 보고 방식 미기재', '실행 횟수·선택 방식을 밝히지 않음', '우리 최고 1회: Ribbon 0.842 (논문 0.866)')]
+      [('Paper', (0.826, 0.829, 0.871, 0.866, 0.766, 0.863), GRAYBAR),
+       ('Ours (mean of 3 runs)', (0.758, 0.749, 0.786, 0.808, 0.723, 0.852), BLUE)],
+      0.60, 0.90, 'Spearman ρ (higher is better)', fmt='0.00')
+textbox(s, 8.15, 1.6, 5.0, 0.4, 'What we know about the gap', size=16, color=NAVY, bold=True)
+causes = [('① Same inputs and settings', 'Same public features (PAMFN), paper hyper-params', '96 regularisation runs did not close it'),
+          ('② Released code ≠ paper model', 'Trainable params 6.99M (paper: 3.82M)', "→ unclear if it is the paper's code"),
+          ('③ Reporting not specified', 'The paper gives no #runs or selection rule', 'Our best single run: Ribbon 0.842 (paper 0.866)')]
 for k, (h_, a_, b_) in enumerate(causes):
     box(s, 8.15, 2.05 + k * 1.18, 5.0, 1.06, [h_, (a_, {'size': 13, 'b': False, 'c': BLUE}),
                                                (b_, {'size': 13, 'b': False, 'c': BLUE})], align='l', size=14)
-bar(s, 5.72, '기준선', '격차 원인은 미확인 → 이후 비교는 이 재현값(3번 평균 RG 0.775 · Fis-V 0.788)과 같은 조건에서 한다', size=15)
-foot(s, 'Paper: Xu et al., CVPR 2025 · 논문과 같은 Fisher z 평균: RG 0.849 → 0.776, Fis-V 0.823 → 0.797 · 그래프는 3번 실행 평균')
+bar(s, 5.72, 'Baseline', 'Gap cause unknown → we compare against our reproduction: RG 0.775 · Fis-V 0.788', size=15)
+foot(s, 'Paper: Xu et al., CVPR 2025 · Fisher-z means as in the paper: RG 0.849 → 0.776, Fis-V 0.823 → 0.797 · bars: mean of 3 runs')
 
 # ================================================================ 4. attempt 1
 s = S[3]; clear(s); title(s, 'Attempt 1: Feature Codebook')
-lead(s, '1차 시도: 영상 특징으로 만든 동작 사전은 효과가 없었다')
+lead(s, 'Attempt 1: a codebook built on video features did not help')
 panel(s, 0.44, 1.6, 5.75, 1.55)
 bullets(s, 0.5, 1.62, 5.65, 1.5, [
-    ('h', '왜 논문 데이터셋부터?'),
-    ('s', '브레이킹(WDSF 실제 심판 점수)에 먼저 넣었지만, 6가지 모델 모두 단순 규칙과 비슷한 수준'),
-    ('s', [('→ 모듈 문제인지 데이터 문제인지 구분 불가', {'c': RED})]),
+    ('h', 'Why the paper datasets first?'),
+    ('s', 'On breaking (real WDSF judge scores), all 6 models were close to a trivial rule'),
+    ('s', [('→ module problem or data problem? Could not tell', {'c': RED})]),
 ], hsz=16, ssz=14, space=300)
-textbox(s, 0.44, 3.4, 5.75, 0.35, '1차 시도의 구조', size=15, color=NAVY, bold=True)
-flow = [('영상', ''), ('Video Swin 특징', 'MLAVL 입력과 같음'), ('동작 사전', '특징 → 번호 128개'), ('MLAVL', '')]
-xs = [0.44, 1.5, 3.36, 5.12]; ws = [0.8, 1.6, 1.5, 1.07]
+textbox(s, 0.44, 3.4, 5.75, 0.35, 'Structure of attempt 1', size=15, color=NAVY, bold=True)
+flow = [('Video', ''), ('Video Swin feature', '= MLAVL input'), ('Codebook', 'feature → 128 codes'), ('MLAVL', '')]
+xs = [0.44, 1.42, 3.3, 5.08]; ws = [0.86, 1.66, 1.56, 1.11]
 for k, ((h_, l_), x_, w_) in enumerate(zip(flow, xs, ws)):
     lines = [h_] + ([(l_, {'size': 11, 'b': False, 'c': BLUE})] if l_ else [])
     box(s, x_, 3.85, w_, 0.95, lines, size=12.5, fill='FFFFFF' if k in (0, 3) else LIGHT, line='C9D6E3')
     if k < 3:
         arr(s, x_ + w_ + 0.03, 4.18, w=0.2, h=0.28)
-textbox(s, 0.44, 4.95, 5.75, 0.35, [('재료가 MLAVL이 이미 보는 특징 → 새 정보가 없다', {'b': True, 'c': RED})], size=13.5)
-chart(s, 6.45, 1.55, 6.7, 4.0, ['리듬체조 (RG)', '피겨 (Fis-V)'],
-      [('재현 (기준선)', (0.775, 0.788), GRAYBAR),
-       ('+ 사전을 그래프 노드로', (0.773, 0.774), MID),
-       ('+ 사전을 특징에 더하기', (0.765, 0.767), BLUE)],
-      0.70, 0.82, 'Spearman ρ (3번 실행 평균)', unit=0.02, fmt='0.000', lsz=12)
-bar(s, 5.72, '원인', '사전을 영상 특징으로 만들면 이미 보는 정보의 반복 → Bailando처럼 ‘몸의 자세(포즈)’로 사전을 만들어야 한다', size=15)
-foot(s, 'WDSF: World DanceSport Federation · 단순 규칙: “두 번째로 춘 댄서가 이긴다” · 동작 사전 = VQ-VAE 코드북 (Bailando)')
+textbox(s, 0.44, 4.95, 5.75, 0.35, [('Made from what MLAVL already sees → nothing new', {'b': True, 'c': RED})], size=13.5)
+chart(s, 6.45, 1.55, 6.7, 4.0, ['Rhythmic gym. (RG)', 'Figure skating (Fis-V)'],
+      [('Reproduction (baseline)', (0.775, 0.788), GRAYBAR),
+       ('+ codes as graph nodes', (0.773, 0.774), MID),
+       ('+ codes added to features', (0.765, 0.767), BLUE)],
+      0.70, 0.82, 'Spearman ρ (mean of 3 runs)', unit=0.02, fmt='0.000', lsz=12)
+bar(s, 5.72, 'Why', 'Re-coding the same features adds nothing → build the codebook from body pose, as Bailando does', size=15)
+foot(s, 'WDSF: World DanceSport Federation · trivial rule: “the second dancer wins” · codebook = VQ-VAE (Bailando)')
 
 # ================================================================ 5. attempt 2
 s = S[4]; clear(s); title(s, 'Attempt 2: Pose Codebook')
-lead(s, '2차 시도: 원본 영상에서 선수의 관절 움직임을 뽑아 Bailando식 동작 사전을 만들었다')
-cards = [('① 원본 영상 받기', '리듬체조 1,000편', '피겨 500편 (45 GB)'),
-         ('② 선수 자세 추출', '관절 17개 · 초당 8장', '1명 추적 · 프레임 95 – 98%'),
-         ('③ 동작 사전 학습', '0.48초 동작 → 번호 1개', '대표 동작 512개 (상체·하체)'),
-         ('④ MLAVL에 입력', '1.3초 영상 구간마다', '그 구간 동작 코드의 벡터 추가')]
+lead(s, "Attempt 2: a Bailando-style codebook of the athlete's joint motion")
+cards = [('① Raw videos', 'Rhythmic gym. 1,000', 'Figure skating 500 (45 GB)'),
+         ('② Athlete pose', '17 joints · 8 per second', '1 person tracked · 95 – 98%'),
+         ('③ Pose codebook', '0.48 s of motion → 1 code', '512 upper + 512 lower'),
+         ('④ Into MLAVL', 'for every 1.3 s clip', 'add its code vectors')]
 for k, (h_, a_, b_) in enumerate(cards):
     x_ = 0.44 + k * 3.2
     box(s, x_, 1.6, 2.88, 1.4, [h_, (a_, {'size': 13.5, 'b': False, 'c': BLUE}), (b_, {'size': 13.5, 'b': False, 'c': BLUE})],
@@ -266,73 +267,73 @@ for k, (h_, a_, b_) in enumerate(cards):
 videos(s, [('fisv154_pose', 0.44, 3.15, 4.1, 2.31), ('rg_same191', 4.7, 3.15, 3.08, 2.31)])
 panel(s, 7.95, 3.15, 5.2, 2.31)
 bullets(s, 8.0, 3.15, 5.1, 2.3, [
-    ('h', '영상 읽는 법'),
-    ('s', [('왼쪽', {'b': True}), (': 김연아(소치)의 자세 + 지금 동작 번호', {})]),
-    ('s', [('가운데', {'b': True}), (': 다른 영상 4편의 비슷한 균형 자세 = 상체 #191', {})]),
-    ('h', '사전 품질'),
-    ('s', '512개 모두 사용 (실효 사용 수 418 – 463개)'),
-    ('s', '복원 오차 = 평균 자세로 대체한 경우의 40 – 60%'),
+    ('h', 'How to read the videos'),
+    ('s', [('Left', {'b': True}), (': Kim Yuna (Sochi), pose + current codes', {})]),
+    ('s', [('Middle', {'b': True}), (': similar poses, 4 videos = #191', {})]),
+    ('h', 'Codebook quality'),
+    ('s', 'All 512 codes used (perplexity 418 – 463)'),
+    ('s', 'Reconstruction error 40 – 60% of mean pose'),
 ], hsz=15, ssz=13, space=150)
-bar(s, 5.72, '1차와 차이', '영상 특징을 다시 쓰지 않고, 영상 특징에 없는 ‘관절 움직임’을 새 정보로 더한다', size=15)
-foot(s, '파랑 상체 사전(머리·팔) · 빨강 하체 사전(골반·다리) · 회색 몸통 · Keypoint R-CNN · Bailando식 2D VQ-VAE · #191은 고른 예시')
+bar(s, 5.72, 'vs. attempt 1', "Instead of re-coding video features, add new information: the athlete's joint motion", size=15)
+foot(s, 'Blue: upper codebook (head, arms) · red: lower (hips, legs) · grey: torso · Bailando-style 2D VQ-VAE · #191 hand-picked')
 
 # ================================================================ 6. results
 s = S[5]; clear(s); title(s, 'Results')
-lead(s, '리듬체조는 4종목 모두 올랐고(0.775 → 0.798), 피겨는 변화가 없었다')
-chart(s, 0.44, 1.55, 7.3, 4.05, ['Ball', 'Clubs', 'Hoop', 'Ribbon', '평균'],
-      [('재현 (기준선)', (0.758, 0.749, 0.786, 0.808, 0.775), GRAYBAR),
-       ('+ 포즈 동작 사전', (0.794, 0.766, 0.802, 0.832, 0.798), BLUE)],
-      0.70, 0.85, '리듬체조 Spearman ρ (3번 실행 평균)', fmt='0.000')
-calls = [('+0.023', '리듬체조 ρ', '0.775 → 0.798'),
-         ('5.10 → 4.84', '리듬체조 최저 MSE', '그 시점의 ρ도 0.766 → 0.781'),
-         ('±0.00', '피겨 ρ', '0.788 → 0.787, 변화 없음')]
+lead(s, 'Gymnastics improved on all 4 apparatus (0.775 → 0.798); skating did not change')
+chart(s, 0.44, 1.55, 7.3, 4.05, ['Ball', 'Clubs', 'Hoop', 'Ribbon', 'Mean'],
+      [('Reproduction (baseline)', (0.758, 0.749, 0.786, 0.808, 0.775), GRAYBAR),
+       ('+ pose codebook', (0.794, 0.766, 0.802, 0.832, 0.798), BLUE)],
+      0.70, 0.85, 'Rhythmic gymnastics, Spearman ρ (mean of 3 runs)', fmt='0.000')
+calls = [('+0.023', 'RG ρ', '0.775 → 0.798'),
+         ('5.10 → 4.84', 'RG best MSE', 'ρ there: 0.766 → 0.781'),
+         ('±0.00', 'Skating ρ', '0.788 → 0.787, no change')]
 for k, (big, lab, sub_) in enumerate(calls):
     y_ = 1.6 + k * 1.12
     panel(s, 7.95, y_, 5.2, 1.0, GREEN if k < 2 else LIGHT)
     textbox(s, 7.98, y_ + 0.2, 2.4, 0.6, big, size=26 if len(big) < 8 else 19, color=BLUE if k < 2 else GRAY, bold=True, align='ctr')
     textbox(s, 10.4, y_ + 0.14, 2.7, 0.35, lab, size=14.5, color=NAVY, bold=True)
     textbox(s, 10.4, y_ + 0.5, 2.7, 0.35, sub_, size=12.5, color=BLUE)
-textbox(s, 7.95, 4.98, 5.2, 0.6, [('넣는 방식이 중요: ', {'b': True}),
-                                  ('코드를 그래프 노드로 붙이면 0.778로 효과 없음, 코드 벡터를 영상 토큰에 더할 때만 효과', {})],
+textbox(s, 7.95, 4.98, 5.2, 0.6, [('How codes enter matters: ', {'b': True}),
+                                  ('graph nodes 0.778 (no gain); adding to video tokens helps', {})],
         size=13, color=NAVY)
-bar(s, 5.72, '주의', '종목별 상승폭(+0.016 – 0.036)은 시드 편차와 비슷한 크기 → 다음 장의 통제 실험으로 원인 확인', size=15)
-foot(s, '모든 값: 시드 3개 평균, 학습 중 최고 test ρ / 최저 test MSE (재현과 같은 방식)')
+bar(s, 5.72, 'Caution', 'Per-apparatus gains (+0.016 – 0.036) ≈ one seed std → checked by the controls on the next slide', size=15)
+foot(s, 'All values: mean of 3 seeds; best test ρ and best test MSE during training (same protocol as the reproduction)')
 
 # ================================================================ 7. ablation & plan
 s = S[6]; clear(s); title(s, 'Ablation & Plan')
 done = len(ABL) >= 7
-lead(s, '개선이 정말 포즈 정보 덕분인지 통제 실험으로 확인' + ('' if done else ' 중 (11/6 완료 예정)'))
+lead(s, 'Is the gain really from pose? Control experiments' + ('' if done else ' (running, done 11/6)'))
 
 
 def v(k, base=0.798):
     if k not in ABL:
-        return '진행 중'
+        return 'running'
     return f'{ABL[k]:.3f} ({ABL[k] - base:+.3f})'
 
 
-rows = [['확인할 질문', '실험', 'RG ρ (차이)'],
-        ['기준: 포즈 동작 코드 사용', '—', '0.798'],
-        ['그 영상의 실제 동작이 필요한가?', '다른 영상의 동작 코드로 바꿔치기', v('swap')],
-        ['동작 순서가 중요한가?', '같은 영상 안에서 구간 순서 섞기', v('shuffle')],
-        ['코드(사전)로 바꾸는 게 필요한가?', '코드 대신 연속 자세 통계 입력', v('posecont')],
-        ['상체와 하체 중 무엇이 중요한가?', '상체 코드만 사용', v('upper')],
-        ['', '하체 코드만 사용', v('lower')],
-        ['기준: 재현 (포즈 없음)', '—', '0.775'],
-        ['MLAVL의 음악·텍스트는 필요한가?', '음악 입력 제거', v('no_audio', 0.775)],
-        ['', '텍스트 동작 그래프 제거', v('no_text_graph', 0.775)]]
+rows = [['Question', 'Experiment', 'RG ρ (Δ)'],
+        ['Baseline: pose codes', '—', '0.798'],
+        ["Is the video's own motion needed?", 'Codes from another video', v('swap')],
+        ['Does the order matter?', 'Shuffle clips within the video', v('shuffle')],
+        ['Is the codebook needed?', 'Continuous pose statistics instead', v('posecont')],
+        ['Upper or lower body?', 'Upper-body codes only', v('upper')],
+        ['', 'Lower-body codes only', v('lower')],
+        ['Baseline: reproduction', '—', '0.775'],
+        ["Are MLAVL's music / text needed?", 'Remove the music input', v('no_audio', 0.775)],
+        ['', 'Remove the action-text graph', v('no_text_graph', 0.775)]]
 table(s, 0.44, 1.6, 8.15, rows, [3.3, 3.2, 1.65], row_h=0.39, size=13, hl=(1, 7), bold_rows=(1, 7), aligns=['l', 'l', 'c'])
 panel(s, 8.85, 1.6, 4.3, 3.96, LIGHT)
 bullets(s, 8.9, 1.62, 4.2, 3.9, [
-    ('h', '읽는 법'),
-    ('s', '기준(0.798)보다 크게 떨어짐 → 그 요소가 개선에 기여'),
-    ('s', '재현값(0.775)까지 떨어짐 → 개선 전부가 그 요소 덕분'),
-    ('s', '아래 두 줄은 포즈 없이 MLAVL 구성요소만 제거 (기준 0.775)'),
-    ('h', '기말 발표까지'),
-    ('s', '브레이킹 배틀 심사에 같은 방식 적용'),
-    ('s', '피겨 기술 점수(TES)가 안 오르는 원인 분석'),
+    ('h', 'How to read'),
+    ('s', 'Large drop from 0.798 → that part contributes'),
+    ('s', 'Drop to 0.775 → all of the gain comes from it'),
+    ('s', 'Last two rows: MLAVL parts removed, no pose (vs. 0.775)'),
+    ('h', 'Until the final'),
+    ('s', 'Apply the same to breaking battles'),
+    ('s', 'Why skating TES does not improve'),
 ], hsz=16, ssz=13.5, space=250)
-bar(s, 5.72, 'Roadmap', '① 재현 ✓  →  ② 포즈 동작 사전으로 리듬체조 개선 ✓  →  ③ 통제 실험' + (' ✓' if done else '') + '  →  ④ 브레이킹 적용 (기말)', size=15)
-foot(s, '모든 실험: 리듬체조 4종목 × 시드 3개, 같은 학습 설정 · 감사합니다')
+bar(s, 5.72, 'Roadmap', '① Reproduction ✓  →  ② Pose codebook improves RG ✓  →  ③ Controls' + (' ✓' if done else '') + '  →  ④ Breaking (final)', size=15)
+foot(s, 'All experiments: 4 RG apparatus × 3 seeds, same training settings · Thank you')
 
 prs.save(OUT)
 print('saved', OUT)
