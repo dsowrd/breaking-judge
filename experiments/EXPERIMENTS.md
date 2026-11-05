@@ -719,3 +719,34 @@ a memory learned on the same Video Swin features adds no information and slightl
 on estimated poses, as in Bailando — raw RG / Fis-V videos downloaded 2026-11-04 (research use only),
 `tools/aqa/aqa_pose.py` → `tools/aqa/aqa_choreo.py` → `--choreo_src pose`; unattended pipeline
 `scripts/phase6b_pipeline.sh` (log `logs/aqa_pose/pipeline.log`).
+
+### Paper datasets: pose-based memory (Phase 6b, 3 seeds, 2026-11-04 21:50 → 11-05 09:04)
+
+Pose from the raw videos (`tools/aqa/aqa_pose.py`: Keypoint R-CNN every 3rd frame, single-athlete tracking; athlete
+found in 95.1 % (Fis-V, min 78 %) / 97.5 % (RG, min 86 %) of sampled frames), VQ-VAE as for breaking
+(`tools/aqa/aqa_choreo.py`, upper / lower K = 512, training split only; val rec Fis-V 0.062 / 0.089, RG 0.060 / 0.090
+vs mean-pose 0.12–0.17, perplexity 418–463 / 512), per-clip code input `ours/choreo_pose.py` (clips with pose 96.7 % /
+97.1 %). Pipeline `scripts/phase6b_pipeline.sh`; GPUs 0/1/3 = seeds 0/1/2. Best test ρ over epochs, as for the reproduction.
+
+| RG | reproduction | feature memory graph / add | **pose graph** | **pose add** |
+|---|---|---|---|---|
+| Ball | 0.758 ± 0.009 | 0.753 / 0.736 | 0.765 ± 0.016 | **0.794 ± 0.017** |
+| Clubs | 0.749 ± 0.041 | 0.743 / 0.719 | 0.749 ± 0.025 | **0.766 ± 0.014** |
+| Hoop | 0.786 ± 0.035 | 0.788 / 0.778 | 0.789 ± 0.022 | **0.802 ± 0.019** |
+| Ribbon | 0.808 ± 0.030 | 0.807 / 0.828 | 0.811 ± 0.029 | **0.832 ± 0.030** |
+| **avg ρ / best MSE** | **0.775 / 5.10** | 0.773 / 5.16, 0.765 / 5.27 | 0.778 / 5.15 | **0.798 / 4.84** |
+
+| Fis-V | reproduction | feature memory graph / add | pose graph | pose add |
+|---|---|---|---|---|
+| TES ρ (best MSE) | 0.723 ± 0.013 (20.77) | 0.700 / 0.690 | 0.712 ± 0.016 (20.66) | 0.719 ± 0.007 (20.24) |
+| PCS ρ (best MSE) | 0.852 ± 0.006 (7.93) | 0.848 / 0.844 | 0.849 ± 0.009 (7.65) | 0.856 ± 0.008 (7.37) |
+| **avg ρ** | **0.788** | 0.774 / 0.767 | 0.780 | 0.787 |
+
+- RG pose `add`: +0.023 avg ρ and lower best MSE (4.84 vs 5.10); every apparatus improves (+0.016 to +0.036,
+  about one seed std each, all four in the same direction). First gain of the new module on any dataset.
+- Fis-V pose `add`: tie in ρ (PCS +0.004, TES −0.004), best MSE lower on both (20.24 / 7.37 vs 20.77 / 7.93).
+- `graph` (codes as MAG² nodes) ≈ reproduction on both datasets; `add` (code vector added to the visual tokens) is
+  the useful form. Pose (Bailando) instead of re-encoded Video Swin features is what changes the result.
+- Ablations moved to RG (where the gain is), `--choreo add`, 3 seeds, tmux `p6c_rgA` (swap, shuffle, posecont,
+  no_audio) and `p6c_rgB` (upper, lower, no_text_graph), started 2026-11-05 09:05; the Fis-V queue
+  (`scripts/phase6b_ablation.sh`) was stopped before it launched anything.
