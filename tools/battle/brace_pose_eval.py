@@ -5,7 +5,7 @@ fed as in the WDSF pipeline: 1280x720, YOLO imgsz 960 conf 0.1; Keypoint R-CNN a
 detection with the highest OKS is scored: this measures the joints of the right person, not the choice of the person.
 
     CUDA_VISIBLE_DEVICES=0 $MLAVL_PY -I tools/battle/brace_pose_eval.py run [--shard k --nshards n] [--videos a,b] [--offset 0]
-    $MLAVL_PY -I tools/battle/brace_pose_eval.py score
+    $MLAVL_PY -I tools/battle/brace_pose_eval.py score [--min_krcnn 0.5 --out _k50]
 """
 import argparse
 import glob
@@ -156,7 +156,7 @@ def score(a):
             typ = t.dance_type.iloc[0] if len(t) else 'none'
             m = np.where(d['frame'] == fr)[0] if len(d['frame']) else np.zeros(0, int)
             for mi, mname in enumerate(['yolo', 'krcnn']):
-                c = m[d['model'][m] == mi] if len(m) else m
+                c = m[(d['model'][m] == mi) & (d['score'][m] >= (a.min_yolo, a.min_krcnn)[mi])] if len(m) else m
                 row = dict(video=vid, frame=fr, type=typ, model=mname, found=False)
                 if len(c):
                     oks, dist, vis = metrics(gt, d['kp'][c])
@@ -178,7 +178,7 @@ def score(a):
                     row['joint_d'] = json.dumps(np.round(np.where(vis, dist[b], np.nan), 3).tolist())
                 rows.append(row)
     df = pd.DataFrame(rows)
-    df.to_csv(f'{OUT}/../pose_eval{a.tag}.csv', index=False)
+    df.to_csv(f'{OUT}/../pose_eval{a.tag}{a.out}.csv', index=False)
     print(len(df) // 2, 'frames', df[df.model == 'yolo'].video.nunique(), 'videos')
     for m, g in df.groupby('model'):
         print('==', m)
@@ -204,5 +204,8 @@ if __name__ == '__main__':
     p.add_argument('--videos', default=None)
     p.add_argument('--offset', type=int, default=0)
     p.add_argument('--tag', default='')
+    p.add_argument('--out', default='')
+    p.add_argument('--min_yolo', type=float, default=0.1)     # detections below this score do not exist for score
+    p.add_argument('--min_krcnn', type=float, default=0.1)    # 0.5 = what the old pipeline stored
     a = p.parse_args()
     {'run': run, 'score': score}[a.cmd](a)
