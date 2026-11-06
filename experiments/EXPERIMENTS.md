@@ -830,7 +830,7 @@ PCA: PC1 73% (overall), PC2 14% = Technique −0.63 / Execution −0.36 vs Origi
 | jerk (expected −) | Execution | +0.136 [+0.055, +0.218] | < 0.001 | no (sign reversed; tracks energy) |
 
 - **Energy → Technique-specific** holds in all 5 event folds (0.13–0.38), after controlling duration + jerk (partial
-  +0.146) or overall preference (+0.185), and is larger on the 45 hand-segmented rounds (0.49). Energy also tracks the
+  +0.146) or overall preference (+0.185), and is larger on the 45 rounds of the first 22 hand-labelled battles (0.49; see the correction at the end of this section: not evidence about segmentation). Energy also tracks the
   physical-vs-artistic axis (PC2, +0.204 [+0.125, +0.287]) and is negative for Originality / Musicality specific parts
   (−0.15 / −0.13): a discriminant pattern.
 - Not pre-specified: **turn duration → Vocabulary-specific +0.168 [+0.092, +0.246]**, all 5 folds positive (0.05–0.28),
@@ -895,3 +895,12 @@ RG 48 frames: athlete 47, no pose 1 (lying on the mat), wrong person 0. Fis-V 48
 (crowd, skater in a spiral), no pose 3 (close-ups). One performer and a clean background make the size-based rule work,
 so the RG / Fis-V pose results (Phase 6b, 6c) are not affected by the WDSF selection problem. Keypoints look rough
 during blurred skating spins (one observation that fits the TES hypothesis; not measured).
+
+### Correction: the 0.49 on hand-labelled rounds is not evidence about segmentation (2026-11-06)
+
+energy -> Technique_spec by group, old pose, current `wdsf_turns.csv` (battle bootstrap): first 22 labelled battles +0.491
+[+0.189, +0.689] (n=45, exact turns); next 19 labelled battles +0.105 [-0.292, +0.453] (n=39, detected turns); all other
+rounds +0.190 [+0.101, +0.278] (n=557, detected turns). The first 22 battles stood out in the same way for pairwise MLAVL
+(see "Decisive test" above), and detected turns did not lower them there. So the inference "segmentation error halves the
+effect" is withdrawn. The groups differ in both battles and turn source, so this does not show segmentation is harmless;
+the 19 labels are not yet in `wdsf_turns.csv`, and a same-battles exact vs detected comparison on them is still to do.
