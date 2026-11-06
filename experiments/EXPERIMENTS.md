@@ -1057,3 +1057,25 @@ group: first 22 battles, exact turns +0.023 (n=45); next 19, detected +0.261 (n=
 not a clear contrast with the rest (about 1.4 standard errors), but the same-battles difference is. So dur -> Vocabulary (+0.17 in Phase 7d) is not established as
 real and should not be reported as a judged-criteria result until it holds on exact turns.
 These 39 rounds are small and unusual: energy, inverted are negative here, positive on all rounds, so only the hand minus detected column is used.
+
+### Plan B: YOLO11x-pose fine-tuned on BRACE manual keypoints (2026-11-06 18:20 → 22:41, GPU 0, shared)
+
+`scripts/phase7f_brace.sh`, one configuration, no sweep. Train 2011-2017, validation 2018, test 2020 (14 videos, 5,413 annotated frames, not used in
+training or epoch choice). Training stopped at epoch 10 by patience 8, best epoch 2 on the 2018 validation fitness, about 3.6 h, well under the 8 h limit.
+Pretrained YOLO on the same frames, no detection = 0, paired video bootstrap (1,000):
+
+| 2020 test frames | n | PCK@0.1 pre → fine-tuned | difference [95% CI] | serious (PCK@0.2 < 0.5) pre → fine-tuned | torso > 60 deg or no detection | no detection near the truth (OKS < 0.1) |
+| --- | --- | --- | --- | --- | --- | --- |
+| power | 2,559 | 0.233 → 0.464 | **+0.231 [+0.214, +0.241]** | 0.606 → 0.190 | 0.494 → 0.056 | 0.359 → 0.020 |
+| footwork | 2,338 | 0.344 → 0.469 | +0.124 [+0.094, +0.162] | 0.459 → 0.211 | 0.355 → 0.117 | 0.280 → 0.029 |
+| toprock | 503 | 0.769 → 0.783 | +0.014 [-0.001, +0.040] | 0.082 → 0.056 | 0.058 → 0.022 | 0.054 → 0.004 |
+
+**B1 passes** (at least +0.05, CI above 0), all 14 videos improved on power moves. Checks, exploratory:
+
+- More found dancers explain part of the gain, not all: on frames both models find (power, 1,619 frames) PCK@0.1 0.364 → 0.499, PCK@0.2 0.580 → 0.739. Toprock unchanged, 0.812 → 0.808.
+- Oracle matching: these scores use the box closest to the truth, which favours a model with more boxes. Boxes per frame with score >= 0.1 are 2.20 vs 1.79 on power. With the top-confidence box
+  instead of the closest one: power 0.123 → 0.211, +0.088 [+0.056, +0.111]; footwork 0.131 → 0.142, +0.011 [-0.001, +0.032]; toprock 0.410 → 0.372, -0.038 [-0.142, +0.049]. The top box
+  often is not the dancer in these frames (the same box as the closest in 43-55% on power), so the oracle numbers show what is available, not what a person-selection rule will deliver.
+- Left-right swaps rise on power moves, on frames both find: 0.132 → 0.196. Our measures do not depend on left and right except the codes.
+- Limits: 2020 dancers can appear in earlier years, so this is new event and video, not always new dancer; BRACE annotated frames appear selected towards hard moments; WDSF is a different camera setup,
+  so the gain there is untested. By the plan, WDSF is re-tracked with the same selection rule (`scripts/phase7f_wdsf_ft.sh`), and human grading on new frames is 정현도's decision.
