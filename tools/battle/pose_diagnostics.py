@@ -125,12 +125,13 @@ def sheet(out, n=24, seed=0):
                               '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True).stdout
         import io
         im = Image.open(io.BytesIO(raw)).convert('RGB')
+        sc = im.width / 1920.0                     # stored coordinates are 1920x1080-equivalent (estimate_pose.py)
         dr = ImageDraw.Draw(im)
         fi = np.where(q['all_frame'] == q['frame'][j])[0][0]
         for b, s in zip(q['all_box'][fi], q['all_det'][fi]):
             if s > 0.5:
-                dr.rectangle([b[0], b[1], b[0] + b[2], b[1] + b[3]], outline=(160, 160, 160), width=2)
-        kp = q['kp'][j]
+                dr.rectangle([b[0] * sc, b[1] * sc, (b[0] + b[2]) * sc, (b[1] + b[3]) * sc], outline=(160, 160, 160), width=2)
+        kp = q['kp'][j] * sc
         for a, b in E:
             col = (60, 120, 255) if a < 11 and b < 11 else (255, 70, 70) if a >= 11 and b >= 11 else (200, 200, 200)
             if a in (5, 6, 7, 9) or b in (5, 7, 9):
