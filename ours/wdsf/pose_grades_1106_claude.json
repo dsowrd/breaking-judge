@@ -91,8 +91,8 @@
 "who": "ok"
 },
 "28": {
-"who": "unclear",
-"note": "frame image is black in the sheet"
+"who": "ok",
+"note": "first graded unclear on a black image caused by a failed frame grab; regraded after the fix, still before the second grader"
 },
 "58": {
 "who": "ok"
