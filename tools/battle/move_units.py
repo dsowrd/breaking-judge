@@ -148,6 +148,31 @@ def validity(df, label=''):
     return res
 
 
+def signature(tm, K, n_neg=20000, seed=0):
+    """Do move histograms identify the dancer? Cosine similarity of (dancer, battle) histograms: same dancer in different
+    battles vs different dancers; AUC. No judge label. A move unit that means something should repeat within a dancer."""
+    from scipy.stats import rankdata
+    h = {}
+    for t, s in tm:
+        if len(s):
+            h.setdefault((t.name, t.battle_id), np.zeros(K))[:] += np.bincount(s, minlength=K)
+    keys = list(h)
+    X = np.array([h[k] / max(np.linalg.norm(h[k]), 1e-9) for k in keys])
+    names = np.array([k[0] for k in keys])
+    battles = np.array([k[1] for k in keys])
+    pos = [X[i] @ X[j] for i in range(len(keys)) for j in np.where((names == names[i]) & (battles != battles[i]))[0] if j > i]
+    rng = np.random.default_rng(seed)
+    neg = []
+    while len(neg) < n_neg:
+        i, j = rng.integers(len(keys), size=2)
+        if names[i] != names[j]:
+            neg.append(X[i] @ X[j])
+    r = rankdata(np.r_[pos, neg])
+    auc = (r[:len(pos)].sum() - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg))
+    print(f'dancer signature: AUC {auc:.3f} ({len(pos)} same-dancer pairs, {len(neg)} different-dancer pairs)', flush=True)
+    return auc
+
+
 def main(grid):
     out = []
     for L in grid[0]:
@@ -161,6 +186,7 @@ def main(grid):
                   f'median distinct per {N} windows {sat:.1f}, median windows / turn {df.n_win.median():.0f}', flush=True)
             if L == 8 and K == 64:
                 df.to_csv(f'{D}/move_measures{TAG}_L8_K64.csv', index=False)
+                signature(tm, K)
             for m, v in validity(df, f'L{L}K{K}').items():
                 out.append(dict(L=L, K=K, measure=m, criterion=HYP[m], rho=v[0], lo=v[1], hi=v[2], p=v[3],
                                 own_highest=v[4], n=v[5], rho_dur=v[6], median_distinct=sat))
