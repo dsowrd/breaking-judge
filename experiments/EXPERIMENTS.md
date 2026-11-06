@@ -1079,3 +1079,37 @@ Pretrained YOLO on the same frames, no detection = 0, paired video bootstrap (1,
 - Left-right swaps rise on power moves, on frames both find: 0.132 → 0.196. Our measures do not depend on left and right except the codes.
 - Limits: 2020 dancers can appear in earlier years, so this is new event and video, not always new dancer; BRACE annotated frames appear selected towards hard moments; WDSF is a different camera setup,
   so the gain there is untested. By the plan, WDSF is re-tracked with the same selection rule (`scripts/phase7f_wdsf_ft.sh`), and human grading on new frames is 정현도's decision.
+
+### Plan B follow-up: WDSF re-tracked with the fine-tuned model (2026-11-06 22:44 → 11-07 07:36, GPU 0, shared)
+
+`scripts/phase7f_wdsf_ft.sh`, same tracker settings and selection rule. 201k + 197k + 202k frames at 8.2 fps per shard, 313 videos. Codebook lower val rec 0.076 (mean-pose 0.142), previous 0.086 (0.155), perplexity 438/512.
+Tags: `yolo_tracks_ft`, `pose_seq2_ft`, `vq2_ft`, `criteria_measures2_ft.csv`.
+
+Coverage mean 0.965 (was 0.945). Same selected person in 91.8% of the 560,181 samples both have (box IoU >= 0.3). Samples with pose in only one of them: 7,154 old, 19,904 new.
+
+**Dancer signature, main setting L8 K64: AUC 0.613** (was 0.596, goal 0.7). **Not met.** So better power-move joints did not make the move units identify the dancer.
+
+Pre-specified measures, same rounds, 647 rounds, battle bootstrap, criterion-specific part:
+
+| measure -> criterion | pose2 | fine-tuned | difference [95% CI] |
+| --- | --- | --- | --- |
+| spin -> Technique | +0.215 [+0.139, +0.282] | +0.136 [+0.055, +0.207] | -0.079 [-0.154, -0.007] |
+| energy -> Technique | +0.176 [+0.089, +0.256] | +0.102 [+0.014, +0.187] | -0.074 [-0.151, +0.006] |
+| inverted -> Technique | +0.142 [+0.053, +0.227] | +0.217 [+0.135, +0.292] | +0.075 [+0.020, +0.133] |
+| jerk -> Execution | +0.152 [+0.074, +0.231] | +0.117 [+0.037, +0.195] | -0.035 [-0.091, +0.018] |
+| voc_ent -> Vocabulary | +0.047 [-0.031, +0.126] | +0.012 [-0.070, +0.090] | -0.035 [-0.125, +0.056] |
+| rare_bi -> Originality | -0.028 [-0.113, +0.058] | -0.043 [-0.124, +0.044] | -0.015 [-0.075, +0.053] |
+| bas -> Musicality | +0.052 [-0.025, +0.133] | +0.040 [-0.035, +0.122] | -0.012 [-0.055, +0.035] |
+| sync -> Musicality | -0.056 [-0.132, +0.019] | -0.072 [-0.155, +0.003] | -0.017 [-0.090, +0.058] |
+
+L8 K64 move units on the new pose: mv_distinct -> Vocabulary +0.077 [-0.015, +0.152], mv_ent +0.078 [-0.007, +0.160], mv_novel -0.060, mv_rare -> Originality +0.027, mv_rare_bi +0.048. Vocabulary, Originality and Musicality remain unmeasured.
+
+**The surprise: cleaner pose lowers spin and energy, raises inverted.** Mean energy 2.92 → 2.13, spin 18.5 → 17.6, jerk 267 → 239, inverted 0.227 → 0.304; turn-level rho between the two poses is only energy 0.57, spin 0.59. Exploratory checks:
+
+- In a joint regression on ranks (646 rounds), old pose holds the energy and spin signal and the new one adds nothing: energy old +0.165 [+0.073, +0.254], new +0.023 [-0.062, +0.114]; spin old +0.202 [+0.112, +0.293], new +0.025 [-0.078, +0.115]. Inverted the other way: old -0.080 [-0.237, +0.068], new +0.281 [+0.149, +0.431]. With only new-pose measures: inverted +0.191 [+0.103, +0.285], energy +0.058, spin +0.041, intervals include 0.
+- Does a pose give the true speed? BRACE 2020 test, annotated frame pairs at most 2 frames apart, closest box, both models found (no judge scores). Power moves, 854 pairs: median speed truth 0.123, old 0.189, fine-tuned 0.115; median |error| 0.089 → 0.041; rho with truth 0.351 → 0.552. Footwork, 870: truth 0.121, 0.154, 0.132, rho 0.449 → 0.463. Toprock, 313: truth 0.081, 0.064, 0.065, rho 0.720 → 0.724.
+- At turn level energy(old) minus energy(new) goes with inverted(new), rho +0.26, and with Technique-specific, rho +0.15.
+
+Reading: on power moves the old pose overestimates speed, so the extra "energy" appeared where the pose fails. **The Phase 7d energy and spin links to Technique may therefore partly be pose error on hard moves, not speed.** Inverted, which only needs coarse body orientation, is the better supported measure. Not established: fine-tuned speed could also be too smooth at 10 Hz on WDSF, BRACE truth is 2D on selected frames, and this explanation came after seeing the result. It needs a test designed in advance.
+
+Person selection on 72 new frames (seeds 20-22, same rule as the 2026-11-06 sample), overlay-only first grade by Claude, committed before any human grade: wrong person 4, unclear 1, no pose with the dancer visible 3 (`ours/wdsf/pose_grades_1107_claude.json`); earlier sample by the same grader: wrong 6, unclear 5, no pose 2. No real difference on this size; 정현도's grade is still needed.

@@ -1,0 +1,223 @@
+{
+"grader": "claude",
+"date": "2026-11-07",
+"graded_on": "pose overlay image only (800x450 sheets), fine-tuned pose, seeds 20-22, before any grade by the second grader; no context frames, no move labels. The skeleton grade ok_bad is not comparable to the 2026-11-06 sheet (no written threshold); only the person grade is compared.",
+"grades": {
+"35": {
+"who": "wrong"
+},
+"20": {
+"who": "ok"
+},
+"5": {
+"who": "ok"
+},
+"53": {
+"who": "wrong"
+},
+"16": {
+"who": "ok"
+},
+"70": {
+"who": "ok"
+},
+"57": {
+"who": "ok"
+},
+"30": {
+"who": "ok_bad"
+},
+"8": {
+"who": "ok"
+},
+"45": {
+"who": "ok"
+},
+"43": {
+"who": "ok"
+},
+"44": {
+"who": "ok"
+},
+"4": {
+"who": "ok_bad"
+},
+"67": {
+"who": "ok"
+},
+"55": {
+"who": "ok"
+},
+"34": {
+"who": "ok"
+},
+"27": {
+"who": "ok"
+},
+"42": {
+"who": "ok"
+},
+"19": {
+"who": "ok"
+},
+"23": {
+"who": "ok_bad"
+},
+"10": {
+"who": "ok"
+},
+"66": {
+"who": "ok"
+},
+"2": {
+"who": "ok"
+},
+"71": {
+"who": "ok"
+},
+"68": {
+"who": "ok"
+},
+"62": {
+"who": "ok_bad"
+},
+"11": {
+"who": "ok"
+},
+"17": {
+"who": "ok_bad"
+},
+"47": {
+"who": "ok_bad"
+},
+"28": {
+"who": "ok"
+},
+"58": {
+"who": "ok"
+},
+"18": {
+"who": "visible"
+},
+"39": {
+"who": "ok"
+},
+"3": {
+"who": "ok"
+},
+"1": {
+"who": "ok"
+},
+"36": {
+"who": "ok"
+},
+"24": {
+"who": "ok"
+},
+"21": {
+"who": "ok"
+},
+"0": {
+"who": "ok"
+},
+"6": {
+"who": "ok"
+},
+"22": {
+"who": "ok"
+},
+"26": {
+"who": "ok"
+},
+"37": {
+"who": "ok"
+},
+"69": {
+"who": "ok"
+},
+"52": {
+"who": "ok"
+},
+"50": {
+"who": "ok"
+},
+"60": {
+"who": "ok"
+},
+"65": {
+"who": "ok"
+},
+"15": {
+"who": "unclear"
+},
+"49": {
+"who": "ok"
+},
+"32": {
+"who": "ok"
+},
+"25": {
+"who": "ok"
+},
+"46": {
+"who": "wrong"
+},
+"14": {
+"who": "ok_bad"
+},
+"9": {
+"who": "ok"
+},
+"38": {
+"who": "ok_bad"
+},
+"64": {
+"who": "ok"
+},
+"51": {
+"who": "ok"
+},
+"31": {
+"who": "visible"
+},
+"61": {
+"who": "ok_bad"
+},
+"40": {
+"who": "ok"
+},
+"48": {
+"who": "ok_bad"
+},
+"13": {
+"who": "ok"
+},
+"12": {
+"who": "ok"
+},
+"7": {
+"who": "ok"
+},
+"63": {
+"who": "ok"
+},
+"59": {
+"who": "wrong"
+},
+"54": {
+"who": "ok_bad"
+},
+"29": {
+"who": "visible"
+},
+"41": {
+"who": "ok_bad"
+},
+"56": {
+"who": "ok"
+},
+"33": {
+"who": "ok_bad"
+}
+}
+}
