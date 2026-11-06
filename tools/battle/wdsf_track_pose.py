@@ -134,9 +134,10 @@ def select_turn(t, tid, box, kp, score, dur):
                          central=float(np.exp(-((cx - 0.5) / 0.3) ** 2).mean()), floor=float((bottom > 0.55).mean()),
                          cut=float((bottom > 0.985).mean()), kpconf=float(c.mean()))
     # Eligibility first: a wrong person is worse than no pose (Phase 7c). Thresholds set on the 22 frames where the old
-    # selection failed; the selection is judged on fresh random frames.
+    # selection failed and on 24 development frames (seed 99, where activity >= 0.8 / cut <= 0.3 / central >= 0.5 dropped
+    # the dancer's own track and left 7 of 24 frames without pose); the selection is judged on fresh random frames.
     for v in tracks.values():
-        v['eligible'] = (v['activity'] >= 0.8 and v['size'] >= 0.18 and v['central'] >= 0.5 and v['cut'] <= 0.3
+        v['eligible'] = (v['activity'] >= 0.5 and v['size'] >= 0.18 and v['central'] >= 0.4 and v['cut'] <= 0.6
                          and v['kpconf'] >= 0.5)
         v['score'] = (min(v['activity'], 3.0) + 1.0 * min(v['size'] / 0.5, 1.5) + 0.5 * v['central']
                       + 0.5 * v['kpconf']) * min(v['n'] / 10.0, 1.0)
