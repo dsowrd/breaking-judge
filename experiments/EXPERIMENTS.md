@@ -863,3 +863,22 @@ half → PCA 32 → k-means K "moves" (no judge labels). Pre-specified main sett
 - Units are still noisy: median 10.1 of 12 windows are different moves (K = 64), and the same dancer's move histograms in
   different battles are only slightly more similar than different dancers' (AUC 0.565, 2,181 same-dancer pairs).
   A move vocabulary needs better motion units than 2D pose on fast, inverted breaking moves gives here.
+
+### Phase 7c: what limits the measures — pose quality, segmentation, or dancer selection? (2026-11-06)
+
+`tools/battle/pose_diagnostics.py` (quality → strata → sheet). Per turn: mean keypoint score of the selected dancer,
+median box height, implausible-jump rate (mean joint displacement > 0.5 box heights per 0.1 s: 16% of consecutive
+samples on average). Rounds split into tertiles by the worse dancer.
+
+- Pose confidence tertiles (low / mid / high): energy → Technique-specific +0.13 / +0.22 / +0.25 (similar for the jump
+  rate); move diversity, Beat Align and move rarity show no trend with pose quality. Segmentation confidence
+  (min_cut_p) tertiles show no trend either (energy +0.25 / +0.13 / +0.24).
+- **Visual check (3 random contact sheets, 72 frames inside automatic turns; coordinates are 1920×1080-equivalent in
+  `pose_est`, consistent with `appearance`, so the pipeline is fine — the first sheet was drawn without rescaling):**
+  correct dancer 44, **wrong person 20 (28%, ~18–39%)**, no pose 2, unclear 6. The errors are almost all frames where
+  the dancer is on the floor or inverted (power moves, freezes, floor work) and the selector takes a standing person
+  (opponent, judge, audience); standing toprock is nearly always right. In many of those frames the dancer has no
+  person detection at all (Keypoint R-CNN, score ≥ 0.5), so the selector cannot recover.
+- Consequence: every WDSF pose-based result (Phase 5c pose inputs, Phase 6 breaking codebook, Phase 7 / 7b measures)
+  saw the wrong person in roughly a quarter of the dancing frames, selectively in the technically hardest moves.
+  The bottleneck is person detection / selection on inverted bodies, not keypoint precision or turn segmentation.
