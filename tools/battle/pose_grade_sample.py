@@ -27,7 +27,8 @@ N = 24
 
 def grab(vid, ts):
     raw = subprocess.run([FFMPEG, '-v', 'error', '-ss', f'{max(ts, 0):.3f}', '-i', f'{V}/{vid}.mp4', '-frames:v', '1', '-vf',
-                          f'scale={W}:{H}', '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True).stdout
+                          f'scale={W}:{H}', '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True,
+                         stdin=subprocess.DEVNULL).stdout
     return Image.open(io.BytesIO(raw)).convert('RGB') if raw else Image.new('RGB', (W, H))
 
 

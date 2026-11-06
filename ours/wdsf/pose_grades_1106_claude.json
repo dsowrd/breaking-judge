@@ -1,7 +1,7 @@
 {
 "grader": "claude",
 "date": "2026-11-06",
-"graded_on": "pose overlay image only (640x360 sheets), before any grade by the second grader; first 3 notes: no context frames, no move labels",
+"graded_on": "pose overlay image only (640x360 sheets), before any grade by the second grader; no context frames, no move labels",
 "grades": {
 "35": {
 "who": "ok"
