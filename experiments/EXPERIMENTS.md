@@ -882,3 +882,10 @@ samples on average). Rounds split into tertiles by the worse dancer.
 - Consequence: every WDSF pose-based result (Phase 5c pose inputs, Phase 6 breaking codebook, Phase 7 / 7b measures)
   saw the wrong person in roughly a quarter of the dancing frames, selectively in the technically hardest moves.
   The bottleneck is person detection / selection on inverted bodies, not keypoint precision or turn segmentation.
+
+**Detector probe (`tools/battle/detector_probe.py`, the 22 failure frames, graded by eye):** the dancer *is* found by
+Keypoint R-CNN with score ≥ 0.2 in ~21 / 22 frames (we stored only ≥ 0.5), by the same model on the 180°-rotated frame
+in ~18 / 22, and by YOLO11x-pose (conf ≥ 0.25) in ~19–20 / 22 with far fewer spurious skeletons than Keypoint R-CNN at
+0.2. So the failures come from the 0.5 storage threshold plus per-frame selection, not from bodies being undetectable.
+Fix: keep lower-score detections and select the dancer per *track* over the whole turn (the most active track on the
+stage floor) instead of per frame.
