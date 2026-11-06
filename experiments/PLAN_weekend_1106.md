@@ -26,3 +26,10 @@ RG with YOLO11x-pose (`AQA_POSE_TAG=_y`), same athlete tracking rule, codebook a
 ## Stop rules
 No hyperparameter sweep on any of these. No new measures chosen by looking at judge scores. The submitted midterm numbers stay unless
 C1 passes. Nothing is deleted. /data free space stays above 200 GB.
+
+## Addendum, fixed before these runs (2026-11-07 07:45, after seeing the single-seed `vq2_ft` results)
+`vq2_ft` Technique s0 passed A1 on one seed (0.584, rule 0.523, p = 0.027), one of three targets, no correction. To confirm:
+Technique and Execution, seeds 1 and 2, on `vq`, `vq2`, `vq2_ft`, same settings (`scripts/phase7f_confirm.sh`).
+- Primary: `vq2_ft` Technique 3-seed ensemble above the second-dancer rule, one-sided p < 0.05, all rounds. Fails if not.
+- Secondary: `vq2_ft` minus `vq2` on the same rounds (paired battle bootstrap); Execution; unseen athletes. Reported either way.
+No other target, seed or setting is added on this question.
