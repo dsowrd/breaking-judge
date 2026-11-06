@@ -4,6 +4,7 @@ A random turn, then a random 10 Hz grid point of that turn. Unlike the earlier s
 points with a detection, so "no pose" counts in the denominator. For every frame: raw image, the same image with the
 stored pose (green box and skeleton = selected dancer, white boxes = every tracked person), and 4 context images at
 -1, -0.5, +0.5, +1 s. The selection is read back from pose_seq2 + yolo_tracks, i.e. exactly what the pipeline stored.
+WDSF_TRACK_TAG=_ft reads the fine-tuned pose (pose_seq2_ft, yolo_tracks_ft).
 
     $MLAVL_PY -I tools/battle/pose_grade_sample.py OUTDIR [seed ...]      # default seeds 10 11 12, 24 frames each
 """
@@ -35,16 +36,16 @@ def grab(vid, ts):
 def main(out, seeds):
     os.makedirs(out, exist_ok=True)
     tab = tp.turns_table()
-    tab = tab[[os.path.exists(f'{F}/pose_seq2/{v}.npz') for v in tab.video_id]]
+    tab = tab[[os.path.exists(f'{F}/pose_seq2{tp.T}/{v}.npz') for v in tab.video_id]]
     rows = []
     for seed in seeds:
         rng = np.random.default_rng(seed)
         for r in tab.sample(N, random_state=seed).itertuples():
             g = int(rng.integers(int(r.start_s * HZ), int(r.end_s * HZ)))
-            q = np.load(f'{F}/pose_seq2/{r.video_id}.npz')
+            q = np.load(f'{F}/pose_seq2{tp.T}/{r.video_id}.npz')
             has = bool(q['ok'][g]) if g < len(q['ok']) else False
             ts = (g + 0.5) / HZ
-            z = np.load(f'{F}/yolo_tracks/{r.video_id}.npz')
+            z = np.load(f'{F}/yolo_tracks{tp.T}/{r.video_id}.npz')
             m = np.where(z['turn'] == r.turn)[0]
             near = m[np.abs(z['t'][m] - ts) <= 0.051]
             if has:                                    # draw at the detection's own time, so the skeleton fits the image
