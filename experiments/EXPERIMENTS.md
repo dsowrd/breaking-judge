@@ -1008,3 +1008,49 @@ on power moves (YOLO, detected frames, body scales): ankle 0.35, knee 0.26, wris
 So YOLO does not localise power-move joints better than the old model: only the coarse structure is better, and it misses more frames.
 The Technique gain of Phase 7d therefore probably comes from choosing the right person and from coarse structure, not from joint
 accuracy; this was not separated directly. Fine-tuning is plan B in `experiments/PLAN_weekend_1106.md`.
+
+## Phase 7f: weekend plan results (`experiments/PLAN_weekend_1106.md`, fixed before the runs)
+
+### Plan A: pairwise MLAVL on Bailando codes from the new pose (`--feat vq2`, 2026-11-06 18:20 → 20:37, GPU 0, shared)
+
+`scripts/phase7f_pair.sh`. Same folds, inner-validation epochs and strict evaluation as `--feat vq` (old pose). All rounds, battle bootstrap:
+
+| target | rounds | acc | 95% CI | second-dancer rule | p vs rule | unseen athletes acc (rule, p vs rule) |
+| --- | --- | --- | --- | --- | --- | --- |
+| total (3 seeds, ensemble) | 748 | 0.544 | 0.507–0.580 | 0.544 | 0.507 | 0.740 (0.560, 0.059), n=50 |
+| Technique (s0) | 637 | 0.549 | 0.508–0.591 | 0.523 | 0.179 | 0.600 (0.540, 0.325) |
+| Execution (s0) | 637 | 0.516 | 0.478–0.553 | 0.493 | 0.237 | 0.640 (0.520, 0.113) |
+| Vocabulary (s0) | 638 | 0.487 | 0.448–0.526 | 0.552 | 0.988 | 0.520 (0.520, 0.542) |
+| Originality (s0) | 636 | 0.536 | 0.495–0.578 | 0.553 | 0.713 | 0.510 (0.490, 0.475) |
+| Musicality (s0) | 638 | 0.553 | 0.511–0.597 | 0.574 | 0.796 | 0.520 (0.540, 0.607) |
+
+**A1 fails** on all three pre-registered targets. **A2 is not met**: no target beats the rule at p < 0.05 on unseen athletes. Linear probe on the
+codes, for reference: total 0.537, Technique 0.559 (rule 0.523, p = 0.097; unseen 0.720, rule 0.540, p = 0.039), Execution 0.507, Vocabulary 0.541,
+Originality 0.509, Musicality 0.555. The probe's unseen Technique result is one of 6 targets on 50 rounds, not a plan criterion.
+
+New vs old pose on the same 748 rounds, total ensemble (exploratory): all 0.544 vs 0.553, difference -0.009 [-0.048, +0.030]. So cleaner person
+selection, which raised the Technique measures in Phase 7d, did not carry over to the trained model. Technique s0 0.549 vs 0.533 and Execution s0
+0.516 vs 0.505 are single seeds.
+
+Unseen athletes (50 rounds, 23 battles, exploratory): ensemble 0.740 vs old 0.640, difference +0.100 [-0.021, +0.220]. Single seeds are 0.700, 0.640,
+0.560 (old 0.620, 0.600, 0.620), so the ensemble number should not be quoted alone. Hand-labelled 52 rounds: 0.769 vs old 0.788, rule 0.615. Only 2 rounds
+are in both subsets. Rounds in neither subset (648): 0.512 vs old 0.529, rule 0.537. The first 22 labelled battles again stand out with either pose.
+Simple rule on the same rounds, for scale: higher energy wins 0.550 (635 rounds), 0.587 unseen (46), 0.600 hand (45); longer turn wins 0.466.
+
+### Same-battle hand vs detected turns (exploratory, closes the open item of the 2026-11-06 correction)
+
+19 labelled battles, 102 turns, new pose (`pose_seq2`), same measure code, only the boundaries differ; 39 rounds (14 battles) have criterion scores.
+Boundary IoU mean 0.83, median 0.89, 7.8% below 0.5. Check: the detected-boundary numbers reproduce `criteria_measures2.csv` exactly on these rounds.
+
+| measure | turn-level rho, hand vs detected | round difference rho | -> criterion-specific | hand | detected | hand - detected [95% CI] |
+| --- | --- | --- | --- | --- | --- | --- |
+| energy | 0.970 | 0.853 | Technique | -0.138 | -0.246 | +0.108 [-0.010, +0.269] |
+| spin | 0.943 | 0.867 | Technique | +0.126 | +0.014 | +0.112 [-0.010, +0.294] |
+| inverted | 0.971 | 0.961 | Technique | -0.246 | -0.278 | +0.032 [-0.076, +0.159] |
+| jerk | 0.924 | 0.756 | Execution | +0.146 | +0.027 | +0.119 [-0.123, +0.324] |
+| dur | 0.639 | 0.630 | Vocabulary | -0.018 | +0.261 | -0.280 [-0.484, -0.088] |
+
+The motion measures hardly depend on the boundaries, so segmentation is not what limits them. More hand labels are not expected to raise them much; this
+agrees with the earlier low priority of the labelling. Duration is the exception because the boundaries define it: on these 39 rounds the
+dur -> Vocabulary link disappears with exact boundaries, which raises the question whether part of that link comes from detection. See the note below.
+These 39 rounds are small and unusual: energy, inverted are negative here, positive on all rounds, so only the hand minus detected column is used.
