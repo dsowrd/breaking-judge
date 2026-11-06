@@ -904,3 +904,56 @@ rounds +0.190 [+0.101, +0.278] (n=557, detected turns). The first 22 battles sto
 (see "Decisive test" above), and detected turns did not lower them there. So the inference "segmentation error halves the
 effect" is withdrawn. The groups differ in both battles and turn source, so this does not show segmentation is harmless;
 the 19 labels are not yet in `wdsf_turns.csv`, and a same-battles exact vs detected comparison on them is still to do.
+
+## Phase 7d: YOLO11x-pose + track-level dancer selection (2026-11-06)
+
+Code: `tools/battle/wdsf_track_pose.py` (`scripts/phase7d_yolo.sh`, GPU 0, 3 shards, 3.5 h, 600k frames, 1.2 GB),
+`scripts/phase7d_after.sh` (`WDSF_POSE_TAG=2`; old files kept). Eligibility thresholds were set on the 22 old failure
+frames and 24 development frames (seed 99). Evaluation: 72 fresh frames (seeds 10-12, random turn, then random 10 Hz
+point, so frames without a pose count), `tools/battle/pose_grade_sample.py`, `pose_grade_page.py`. Two independent graders:
+Claude (overlay only, committed first, 877a647; frame 28 regraded after a failed frame grab was fixed) and 정현도 (expert,
+with raw frame and +-1 s context, also the move type). Grades: `ours/wdsf/pose_grades_1106_{claude,hyundo}.json`.
+
+| of 72 frames | 정현도 | Claude |
+| --- | --- | --- |
+| right person, skeleton good | 35 | 55 |
+| right person, skeleton off | 28 | 4 |
+| wrong person | **7 (9.7%, Wilson 95% 4.8-18.7)** | 6 (8.3%) |
+| unclear | 0 | 5 |
+| no pose, dancer visible | 2 | 2 |
+
+- Wrong person: 28% (20 / 72, Phase 7c, one grader) -> 9.7% (Fisher p = 0.0095). Target < 10% is met on the point estimate,
+  not on the upper bound. Agreement on right / wrong / unclear / no pose 93%, kappa 0.75; all 6 of Claude's wrong frames are
+  in 정현도's 7, the 7th was unclear for Claude. Pose exists on 94% of turn time (median per turn 98%).
+- **Skeleton quality is the new finding.** On 28 frames the person is right and the skeleton is off (expert); Claude saw
+  only 4 of them, so the first grader is not valid for joint quality. By move, among right-person frames: power 17 / 20 off,
+  freeze 2 / 2, footwork 7 / 15, toprock 1 / 11 (power vs toprock Fisher p < 0.0001). "Off" had no written threshold.
+- 10 / 72 frames are not dancing (walking, waiting, bowing), 9 of them within 6 s of a turn boundary. 5 of the 7 wrong-person
+  frames lie in the first 7 s of a turn (both dancers on the floor, walking); seen after grading, so any trimming rule
+  needs new frames to be judged.
+
+Validity, new vs old pose, Spearman with the criterion-specific part, battle bootstrap, 636 / 641 rounds. (L8 K64 = main)
+
+| measure -> criterion | old | new | same-round difference |
+| --- | --- | --- | --- |
+| inverted -> Technique | +0.016 [-0.075, +0.107] | **+0.138 [+0.050, +0.224]** | +0.123 [+0.039, +0.209] |
+| spin -> Technique | +0.078 [-0.004, +0.161] | **+0.214 [+0.134, +0.288]** | +0.130 [+0.031, +0.227] |
+| energy -> Technique | +0.208 [+0.131, +0.287] | +0.181 [+0.090, +0.265] | -0.024 [-0.123, +0.074] |
+| jerk -> Execution | +0.136 | +0.155 [+0.074, +0.236] | |
+| duration -> Vocabulary (not pre-specified) | +0.168 | +0.168 [+0.093, +0.248] | |
+| move diversity -> Vocabulary, L8 K64 | +0.064 (this run) | +0.051 [-0.027, +0.141] | |
+| move rarity -> Originality, L8 K64 | +0.004 | +0.001 [-0.085, +0.080] | |
+| code rarity upper -> Originality | +0.025 | -0.117 [-0.205, -0.032] (wrong sign) | |
+| Beat Align -> Musicality | -0.060 | +0.049 [-0.033, +0.134] | |
+
+Per event fold (5 folds, new pose): spin +0.18..+0.30, energy +0.11..+0.24, inverted +0.04..+0.21, all positive; jerk -> Execution
+-0.06..+0.32, mixed. Partial for the new pose: spin +0.111, energy +0.070 given duration + jerk; +0.191, +0.179 given overall. Coverage difference
+vs Technique / Vocabulary -0.02 / +0.03: missing pose does not drive the measures. Codebook: lower val rec 0.086 vs mean
+pose 0.155, perplexity 422 / 512. Dancer signature AUC 0.566 (old, same code) -> **0.596, below the 0.7 goal**; median distinct
+moves 10.3 of 12. Move diversity -> Vocabulary over the 9 settings +0.031..+0.106 (L5 K64 and L8 K128 have CIs above 0; main does
+not). Move-transition rarity -> Originality main +0.053, p = 0.18, L12 settings +0.076..+0.087, p = 0.03-0.04: 45 tests in the
+grid, not a finding.
+
+Reading: fixing the person made the inverted and spinning measures valid for Technique, as a wrong-person error on floor moves
+would predict. It did not create move units or artistic measures. Joint errors in power moves are the next suspect for the unit
+problem, not shown yet. BRACE manual keypoints (26.7k frames) can measure and fine-tune this.
