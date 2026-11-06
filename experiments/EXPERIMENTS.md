@@ -975,7 +975,7 @@ swapped; structure = torso direction wrong or upside down. The levels were defin
 
 Serious, power vs toprock: 11 / 20 vs 0 / 11, Fisher p about 0.002.
 
-## Phase 7e: pose accuracy on BRACE manual keypoints (2026-11-06, in progress)
+## Phase 7e: pose accuracy on BRACE manual keypoints (2026-11-06)
 
 `tools/battle/brace_pose_eval.py`, `scripts/phase7e_brace.sh`: 26,676 manual frames, 81 videos, GPU 0, 3 shards, 44 min. Input as in the
 WDSF pipeline. The detection closest to the truth (highest OKS) is scored, so this is joint accuracy, not person choice. Frame ids are
@@ -990,5 +990,21 @@ column of the manual files is not meaningful (BRACE README); an early scoring ru
 
 CIs: video bootstrap. The manual frames look selected towards hard moments (61% power moves, much occlusion; the README does not state
 the selection), so read differences between moves and models, not an average error of BRACE or WDSF. Keypoint R-CNN with scores down
-to 0.1 scored similarly here, but best-of-many matching favours a detector with many junk boxes; the fair comparison at the old
-storage threshold (0.5) is pending.
+to 0.1 scored similarly here, but best-of-many matching favours a detector with many junk boxes, so the comparison below uses the old
+storage threshold (0.5; `score --min_krcnn 0.5 --out _k50`).
+
+| power moves, 16,207 frames | YOLO11x-pose | Keypoint R-CNN >= 0.5 |
+| --- | --- | --- |
+| PCK@0.05 | 0.110 | 0.131 |
+| PCK@0.1 | 0.203 | 0.201 |
+| PCK@0.2 | 0.329 | 0.297 |
+| serious | 0.669 | 0.787 |
+| torso direction off by > 60 deg, or no detection | 0.560 | 0.653 |
+| nothing near the truth (OKS < 0.1) | 0.412 | 0.281 |
+
+PCK@0.1 difference: power +0.002 [-0.003, +0.008], footwork +0.016 [+0.009, +0.022], toprock +0.041 [+0.023, +0.056]. Median joint error
+on power moves (YOLO, detected frames, body scales): ankle 0.35, knee 0.26, wrist 0.20, shoulder 0.15; toprock 0.03-0.05 everywhere.
+
+So YOLO does not localise power-move joints better than the old model: only the coarse structure is better, and it misses more frames.
+The Technique gain of Phase 7d therefore probably comes from choosing the right person and from coarse structure, not from joint
+accuracy; this was not separated directly. Fine-tuning is plan B in `experiments/PLAN_weekend_1106.md`.
