@@ -5,6 +5,7 @@ Frames come from raw videos, so they stay on this machine: nothing is uploaded a
 Grades go to DIR/grades_<grader>.json after every answer.
 
     python3 tools/battle/pose_grade_page.py DIR [--port 8765] [--grader hyundo]    # then open http://127.0.0.1:8765
+    python3 tools/battle/pose_grade_page.py DIR --severity GRADES.json     # only frames graded ok_bad: how bad is the skeleton
 """
 import argparse
 import json
@@ -35,34 +36,35 @@ nav{display:flex;gap:8px;margin-top:14px;align-items:center}.note{width:100%;mar
 <div><img id="pose" alt="포즈"><div class="cap" id="capp"></div></div></div>
 <div class="strip" id="strip"></div>
 <div class="q"><b id="q1t"></b><div class="opts" id="q1"></div></div>
-<div class="q"><b>이 순간의 동작 <span class="mut">(앞뒤 장면 참고)</span></b><div class="opts" id="q2"></div></div>
+<div class="q" id="q2w"><b>이 순간의 동작 <span class="mut">(앞뒤 장면 참고)</span></b><div class="opts" id="q2"></div></div>
 <input class="note" id="note" placeholder="메모 (선택)">
 <nav><button id="prev">이전 (←)</button><button id="next">다음 (→)</button><span class="mut" id="done"></span></nav>
 </main><script>
 const POSE=[['ok','맞는 댄서, 뼈대 양호'],['ok_bad','맞는 댄서, 뼈대 틀어짐'],['wrong','다른 사람'],['unclear','판단 불가']];
 const NOPOSE=[['visible','댄서가 보이는데 놓침'],['absent','댄서가 안 보임 (클로즈업, 전광판 등)'],['unclear','판단 불가']];
 const MOVE=[['toprock','탑락'],['footwork','풋워크'],['power','파워무브'],['freeze','프리즈'],['transition','고다운·전환'],['notdance','춤 아님 (걷기, 대기, 인사)'],['unknown','모르겠음']];
-const KEYS='qwertyu';let F=[],G={},i=0;
+const SEV=[['minor','경미: 손목·발목 등 끝 관절만 어긋남, 몸 구조는 맞음'],['limb','부분 실패: 팔이나 다리 하나가 통째로 틀림, 또는 좌우 뒤바뀜'],['structure','구조 실패: 몸통 방향이 틀리거나 상하가 뒤집혀 자세를 알아볼 수 없음']];
+const KEYS='qwertyu';let F=[],G={},i=0,SM=false;const full=g=>g&&g.who&&(SM||g.move);
 const $=id=>document.getElementById(id);
 async function save(){const r=await fetch('/save',{method:'POST',body:JSON.stringify(G)});$('saved').textContent=r.ok?'저장됨':'저장 실패';}
 function opts(el,list,key,keys){el.textContent='';const f=F[i],g=G[f.k]||{};list.forEach(([v,t],n)=>{const b=document.createElement('button');
  const kb=document.createElement('kbd');kb.textContent=keys[n];b.append(kb,t);if(g[key]===v)b.className='on';b.onclick=()=>pick(key,v);el.append(b);});}
 function pick(key,v){const f=F[i];G[f.k]=Object.assign(G[f.k]||{},{[key]:v});save();render();
- const g=G[f.k];if(g.who&&g.move&&i<F.length-1&&key==='move'){i++;render();}}
+ const g=G[f.k];if(full(g)&&i<F.length-1&&(SM||key==='move')){i++;render();}}
 function render(){const f=F[i],p=String(f.k).padStart(2,'0');$('raw').src=`/img/${p}_raw.jpg`;$('pose').src=`/img/${p}_pose.jpg`;
  $('capp').textContent=f.has_pose?'초록 상자와 뼈대 = 시스템이 고른 사람, 흰 상자 = 검출된 다른 사람':'시스템이 이 순간 포즈를 쓰지 않음 (흰 상자 = 검출된 사람)';
  const s=$('strip');s.textContent='';[['c0','−1초'],['c1','−0.5초'],[null,''],['c2','+0.5초'],['c3','+1초']].forEach(([c,t])=>{const d=document.createElement('div');
   if(c){const im=document.createElement('img');im.src=`/img/${p}_${c}.jpg`;im.alt=t;d.append(im);d.append(t);}else d.textContent='◀ 앞뒤 장면 ▶';s.append(d);});
- $('q1t').textContent=f.has_pose?'시스템이 고른 사람이 차례 중인 댄서인가요?':'이 순간 차례 중인 댄서가 보이나요?';
- opts($('q1'),f.has_pose?POSE:NOPOSE,'who','1234');opts($('q2'),MOVE,'move',KEYS);
+ $('q1t').textContent=SM?'뼈대가 얼마나 틀어졌나요?':f.has_pose?'시스템이 고른 사람이 차례 중인 댄서인가요?':'이 순간 차례 중인 댄서가 보이나요?';
+ opts($('q1'),SM?SEV:f.has_pose?POSE:NOPOSE,'who','1234');$('q2w').hidden=SM;if(!SM)opts($('q2'),MOVE,'move',KEYS);
  $('note').value=(G[f.k]||{}).note||'';$('pos').textContent=`${i+1} / ${F.length}`;
- const n=F.filter(x=>G[x.k]&&G[x.k].who&&G[x.k].move).length;$('bar').style.width=(100*n/F.length)+'%';$('done').textContent=n===F.length?'모두 끝났습니다. 창을 닫으셔도 됩니다.':`완료 ${n}개`;}
+ const n=F.filter(x=>full(G[x.k])).length;$('bar').style.width=(100*n/F.length)+'%';$('done').textContent=n===F.length?'모두 끝났습니다. 창을 닫으셔도 됩니다.':`완료 ${n}개`;}
 $('prev').onclick=()=>{if(i>0){i--;render();}};$('next').onclick=()=>{if(i<F.length-1){i++;render();}};
 $('note').onchange=e=>{const f=F[i];G[f.k]=Object.assign(G[f.k]||{},{note:e.target.value});save();};
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const f=F[i],a=(f.has_pose?POSE:NOPOSE);
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const f=F[i],a=SM?SEV:(f.has_pose?POSE:NOPOSE);
  if(e.key==='ArrowLeft')$('prev').click();else if(e.key==='ArrowRight')$('next').click();
- else if('1234'.includes(e.key)&&a[+e.key-1])pick('who',a[+e.key-1][0]);else{const n=KEYS.indexOf(e.key);if(n>=0)pick('move',MOVE[n][0]);}});
-(async()=>{F=await(await fetch('/frames')).json();G=await(await fetch('/grades')).json();const u=F.findIndex(x=>!(G[x.k]&&G[x.k].who&&G[x.k].move));i=u<0?0:u;render();})();
+ else if('1234'.includes(e.key)&&a[+e.key-1])pick('who',a[+e.key-1][0]);else if(!SM){const n=KEYS.indexOf(e.key);if(n>=0)pick('move',MOVE[n][0]);}});
+(async()=>{SM=(await(await fetch('/mode')).json()).severity;F=await(await fetch('/frames')).json();G=await(await fetch('/grades')).json();const u=F.findIndex(x=>!full(G[x.k]));i=u<0?0:u;render();})();
 </script></html>"""
 
 
@@ -71,9 +73,14 @@ def main():
     p.add_argument('dir')
     p.add_argument('--port', type=int, default=8765)
     p.add_argument('--grader', default='hyundo')
+    p.add_argument('--severity', default=None)
     a = p.parse_args()
     root = os.path.abspath(a.dir)
-    out = os.path.join(root, f'grades_{a.grader}.json')
+    out = os.path.join(root, f'grades_{a.grader}{"_severity" if a.severity else ""}.json')
+    frames = json.load(open(os.path.join(root, 'frames.json')))
+    if a.severity:
+        prev = json.load(open(a.severity))
+        frames = [r for r in frames if prev.get(str(r['k']), {}).get('who') == 'ok_bad']
 
     class H(BaseHTTPRequestHandler):
         def log_message(self, *x):
@@ -90,7 +97,9 @@ def main():
             if self.path == '/':
                 self.send(PAGE.encode(), 'text/html; charset=utf-8')
             elif self.path == '/frames':
-                self.send(open(os.path.join(root, 'frames.json'), 'rb').read())
+                self.send(json.dumps(frames).encode())
+            elif self.path == '/mode':
+                self.send(json.dumps({'severity': bool(a.severity)}).encode())
             elif self.path == '/grades':
                 self.send(open(out, 'rb').read() if os.path.exists(out) else b'{}')
             elif self.path.startswith('/img/'):
