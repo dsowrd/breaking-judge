@@ -783,3 +783,22 @@ Reading:
 - In our reproduction, removing MLAVL's audio input or its action-text graph changes nothing on RG (p > 0.4). Reported
   as observed; our reproduction is below the paper (0.775 vs 0.849), so this is not a claim about the paper's setting.
 - Next: Phase 6c (Bailando Beat Align per clip, `--extra`), queue `scripts/phase6c_queue.sh` (tmux `p6d_q`).
+
+### Phase 6c: extra clip inputs on RG (Bailando Beat Align, optical flow; 3 seeds, 2026-11-05 23:34 → 11-06 10:12)
+
+`--extra` (`ours/extra_inputs.py`): each input projected and added to the visual tokens. Beat = `tools/aqa/aqa_beat.py`
+(9-d per clip: motion energy, kinematic / music beats per s, Beat Align Score σ 0.1 s, music beats followed by a
+kinematic beat within 0.2 s, onset strength, speed–onset correlation, tempo, has_pose). Flow = PAMFN I3D flow (1024-d).
+Queue `scripts/phase6c_queue.sh`, GPU 0/1/3. Paired t over the 12 runs.
+
+| setting | RG avg ρ (Fisher z) | best MSE | vs pose add 0.798 | vs reproduction 0.775 |
+|---|---|---|---|---|
+| `--extra pose,beat` | 0.795 (0.796) | 4.96 | −0.003, p = 0.60 | +0.020, 11/12, p = 0.008 |
+| `--extra pose,posecont` | 0.794 (0.796) | 5.05 | −0.004, p = 0.57 | |
+| `--extra pose,beat,flow` | 0.786 (0.790) | 5.15 | −0.012, p = 0.21 | |
+| `--extra beat` | 0.773 (0.776) | 5.33 | | −0.002, p = 0.78 |
+| `--extra flow` | 0.771 (0.777) | 5.17 | | −0.004, p = 0.70 |
+
+Reading: Beat Align adds nothing on top of pose and nothing alone; optical flow (another motion input) adds nothing
+either, alone or with pose. The RG gain is specific to the athlete's pose; pose add (0.798) stays the best setting, so
+no new Fis-V run is needed (pose add was already run there: 0.787 vs 0.788).

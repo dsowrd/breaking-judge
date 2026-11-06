@@ -336,9 +336,10 @@ bullets(s, 8.9, 1.62, 4.2, 3.9, [
     ('s', 'Lower body (hips, legs) carries the gain'),
     ('s', 'Continuous pose works as well as codes → pose is the key; codes give readable motion units'),
     ('s', "MLAVL's music and text graph: no measurable effect here"),
-    ('h', 'Until the final'),
-    ('s', 'Bailando Beat Align as input (running) · breaking battles'),
-], hsz=15, ssz=12.5, space=180)
+    ('h', 'Also tried'),
+    ('s', '+ Beat Align (Bailando): 0.795, no gain'),
+    ('s', 'Optical flow, no pose: 0.771, no gain'),
+], hsz=15, ssz=12.5, space=150)
 bar(s, 5.72, 'Roadmap', '① Reproduction ✓  →  ② Pose codebook improves RG ✓  →  ③ Controls' + (' ✓' if done else '') + '  →  ④ Breaking (final)', size=15)
 foot(s, 'All: 4 RG apparatus × 3 seeds, same settings · p: paired t-test over the 12 runs vs. the bold baseline · Thank you')
 
