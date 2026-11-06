@@ -30,7 +30,7 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import criteria_validity as cv  # noqa: E402
 
-F, D, KEY, C = cv.F, cv.D, cv.KEY, cv.C
+F, D, KEY, C, TAG = cv.F, cv.D, cv.KEY, cv.C, cv.TAG
 N = 12
 MV = ['mv_distinct', 'mv_ent', 'mv_rare', 'mv_rare_bi', 'mv_novel']
 HYP = {'mv_distinct': 'Vocabulary', 'mv_ent': 'Vocabulary', 'mv_novel': 'Vocabulary',
@@ -38,7 +38,7 @@ HYP = {'mv_distinct': 'Vocabulary', 'mv_ent': 'Vocabulary', 'mv_novel': 'Vocabul
 
 
 def emb(part):
-    return torch.load(f'{F}/choreo_{part}.pt', map_location='cpu', weights_only=True)['vq.emb'].numpy()
+    return torch.load(f'{F}/choreo{TAG}_{part}.pt', map_location='cpu', weights_only=True)['vq.emb'].numpy()
 
 
 def turn_windows(L):
@@ -47,8 +47,10 @@ def turn_windows(L):
     turns = pd.read_csv(f'{D}/wdsf_turns.csv')
     out, cache = [], {}
     for t in turns.itertuples():
+        if not os.path.exists(f'{F}/vq{TAG}/{t.video_id}.npz'):
+            continue
         if t.video_id not in cache:
-            cache[t.video_id] = dict(np.load(f'{F}/vq/{t.video_id}.npz'))
+            cache[t.video_id] = dict(np.load(f'{F}/vq{TAG}/{t.video_id}.npz'))
         q = cache[t.video_id]
         m = np.where((q['code_t'] >= t.start_s) & (q['code_t'] < t.end_s))[0]
         X = []
@@ -158,12 +160,12 @@ def main(grid):
             print(f'\nL={L} ({L * 0.4:.1f} s) K={K}: windows {len(allm)}, used moves {len(np.unique(allm))}, '
                   f'median distinct per {N} windows {sat:.1f}, median windows / turn {df.n_win.median():.0f}', flush=True)
             if L == 8 and K == 64:
-                df.to_csv(f'{D}/move_measures_L8_K64.csv', index=False)
+                df.to_csv(f'{D}/move_measures{TAG}_L8_K64.csv', index=False)
             for m, v in validity(df, f'L{L}K{K}').items():
                 out.append(dict(L=L, K=K, measure=m, criterion=HYP[m], rho=v[0], lo=v[1], hi=v[2], p=v[3],
                                 own_highest=v[4], n=v[5], rho_dur=v[6], median_distinct=sat))
-    pd.DataFrame(out).to_csv(f'{D}/move_validity_grid.csv', index=False)
-    print('wrote', f'{D}/move_validity_grid.csv')
+    pd.DataFrame(out).to_csv(f'{D}/move_validity_grid{TAG}.csv', index=False)
+    print('wrote', f'{D}/move_validity_grid{TAG}.csv')
 
 
 if __name__ == '__main__':

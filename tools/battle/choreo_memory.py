@@ -32,6 +32,8 @@ HZ, DOWN, WIN = 10.0, 4, 32                 # sample rate, steps per code, train
 UPPER = list(range(0, 11))                  # COCO: nose, eyes, ears, shoulders, elbows, wrists
 LOWER = list(range(11, 17))                 # hips, knees, ankles
 CODE_DIM, K = 64, 512
+TAG = os.environ.get('WDSF_POSE_TAG', '')     # '2' = YOLO11x-pose + track selection (pose_seq2, vq2, choreo2_*.pt)
+POSE, VQD, CK = f'pose_seq{TAG}', f'vq{TAG}', f'choreo{TAG}'
 
 
 # ----------------------------------------------------------------------------------------------- extraction
@@ -96,7 +98,7 @@ def turn_windows():
     t = pd.read_csv(f'{D}/wdsf_turns.csv')
     U, L = [], []
     for vid, g in t.groupby('video_id'):
-        p = f'{F}/pose_seq/{vid}.npz'
+        p = f'{F}/{POSE}/{vid}.npz'
         if not os.path.exists(p):
             continue
         z = np.load(p)
@@ -213,7 +215,7 @@ def train(a):
                     base = (Xv - Xv.mean((0, 1))).abs().mean().item()
                 print(f'{part} step {step}: train rec {rec.item():.4f} | val rec {rv:.4f} (mean-pose {base:.4f}) '
                       f'| val perplexity {pv.item():.0f} / {K}, codes used {len(torch.unique(iv))}', flush=True)
-        torch.save(m.state_dict(), f'{F}/choreo_{part}.pt')
+        torch.save(m.state_dict(), f'{F}/{CK}_{part}.pt')
 
 
 def encode(a):
@@ -223,12 +225,12 @@ def encode(a):
     ms = {}
     for part, dim in (('upper', len(UPPER) * 2), ('lower', len(LOWER) * 2 + 2)):
         m = build_vqvae(dim).to(dev)
-        m.load_state_dict(torch.load(f'{F}/choreo_{part}.pt', map_location=dev))
+        m.load_state_dict(torch.load(f'{F}/{CK}_{part}.pt', map_location=dev))
         ms[part] = m.eval()
-    os.makedirs(f'{F}/vq', exist_ok=True)
-    ids = sorted(f[:-4] for f in os.listdir(f'{F}/pose_seq') if f.endswith('.npz'))
+    os.makedirs(f'{F}/{VQD}', exist_ok=True)
+    ids = sorted(f[:-4] for f in os.listdir(f'{F}/{POSE}') if f.endswith('.npz'))
     for vid in ids:
-        z = np.load(f'{F}/pose_seq/{vid}.npz')
+        z = np.load(f'{F}/{POSE}/{vid}.npz')
         up, low = body_parts(z['rel'], z['root'])
         n = (len(up) // DOWN) * DOWN
         out, toks = [], []
@@ -250,7 +252,7 @@ def encode(a):
             mk = (code_t >= s0[t]) & (code_t < s0[t] + L / fps) & code_ok
             if mk.any():
                 feat[t], has[t] = q[mk].mean(0), 1
-        np.savez(f'{F}/vq/{vid}.npz', pose=feat, has_pose=has, up=toks[0], low=toks[1], code_t=code_t, code_ok=code_ok)
+        np.savez(f'{F}/{VQD}/{vid}.npz', pose=feat, has_pose=has, up=toks[0], low=toks[1], code_t=code_t, code_ok=code_ok)
     print(len(ids), 'videos encoded')
 
 

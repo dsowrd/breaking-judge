@@ -40,6 +40,7 @@ F = '/data/mlavl/features/WDSF'
 D = '/data/mlavl/datasets/wdsf'
 V = '/data/mlavl/videos/wdsf'
 FFMPEG = os.environ.get('FFMPEG', '/home/irl/anaconda3/bin/ffmpeg')
+TAG = os.environ.get('WDSF_POSE_TAG', '')     # '2' = YOLO11x-pose + track selection (pose_seq2, vq2, *2.csv)
 C = ['Technique', 'Vocabulary', 'Originality', 'Execution', 'Musicality']
 KEY = ['competition', 'battle_id', 'round']
 SR, HOP, HZ, WIN, SIGMA = 22050, 512, 10.0, 40, 0.1
@@ -154,7 +155,9 @@ def turn_measures(t, vq, ps, bt, freq):
 
 def measures():
     turns = pd.read_csv(f'{D}/wdsf_turns.csv')
-    vq = {v: dict(np.load(f'{F}/vq/{v}.npz')) for v in turns.video_id.unique()}
+    vids = [v for v in turns.video_id.unique() if os.path.exists(f'{F}/vq{TAG}/{v}.npz')]
+    turns = turns[turns.video_id.isin(vids)]
+    vq = {v: dict(np.load(f'{F}/vq{TAG}/{v}.npz')) for v in vids}
     # code frequencies per athlete, for leave-athlete-out rarity
     from collections import Counter
     cnt = {}
@@ -177,13 +180,13 @@ def measures():
                 lambda c, r=rest[1], n=n[1]: (r[c] + 1) / (n + 512),
                 lambda b, r=rest[2], n=n[2]: (r[b] + 1) / (n + 512 * 512))
         for t in turns[turns.name == name].itertuples():
-            ps = np.load(f'{F}/pose_seq/{t.video_id}.npz')
+            ps = np.load(f'{F}/pose_seq{TAG}/{t.video_id}.npz')
             bt = np.load(f'{F}/beats/{t.video_id}.npz')
             rows.append(dict(video_id=t.video_id, competition=t.competition, battle_id=t.battle_id, round=t.round,
                              order=t.order, athlete=t.athlete, name=t.name, source=t.source,
                              **turn_measures(t, vq[t.video_id], ps, bt, freq)))
     df = pd.DataFrame(rows)
-    df.to_csv(f'{D}/criteria_measures.csv', index=False)
+    df.to_csv(f'{D}/criteria_measures{TAG}.csv', index=False)
     print(df[MEAS].describe().T.round(3).to_string())
 
 
@@ -195,7 +198,7 @@ def rounds(min_codes=20):
     lab['overall'] = lab[C].mean(1)
     for c in C:
         lab[c + '_spec'] = lab[c] - lab['overall']
-    m = pd.read_csv(f'{D}/criteria_measures.csv')
+    m = pd.read_csv(f'{D}/criteria_measures{TAG}.csv')
     m = m[m.n_codes >= min_codes]
     per = m.groupby(KEY + ['athlete'])[MEAS].mean().reset_index()
     per['hand'] = m.groupby(KEY + ['athlete']).source.agg(lambda s: (s != 'auto').all()).values
@@ -245,7 +248,7 @@ def validity():
         best = all(sign * tab.loc[m, c + '_spec'] > sign * o for o in others)
         print(f'  {m:9s} -> {c:11s} rho {e:+.3f} [{lo:+.3f}, {hi:+.3f}] p={p:.3f}   '
               f'highest of the 5 specific parts: {best}')
-    out = f'{D}/criteria_validity_table.csv'
+    out = f'{D}/criteria_validity_table{TAG}.csv'
     tab.to_csv(out)
     print('\nwrote', out)
 
