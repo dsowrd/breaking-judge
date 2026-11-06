@@ -125,7 +125,7 @@ def run(a):
 
 def metrics(gt, kp):
     """gt (17,3) and kp (n,17,3), 1280x720 px. Returns per detection OKS, and per joint normalised distance"""
-    vis = gt[:, 2] > 0
+    vis = gt[:, :2].sum(1) > 0     # BRACE README: the third column is not meaningful
     xy = gt[vis, :2]
     w, h = np.ptp(xy[:, 0]), np.ptp(xy[:, 1])
     scale = max(w, h, 1.0)
