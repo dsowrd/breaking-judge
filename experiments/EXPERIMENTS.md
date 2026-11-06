@@ -1052,5 +1052,8 @@ Boundary IoU mean 0.83, median 0.89, 7.8% below 0.5. Check: the detected-boundar
 
 The motion measures hardly depend on the boundaries, so segmentation is not what limits them. More hand labels are not expected to raise them much; this
 agrees with the earlier low priority of the labelling. Duration is the exception because the boundaries define it: on these 39 rounds the
-dur -> Vocabulary link disappears with exact boundaries, which raises the question whether part of that link comes from detection. See the note below.
+dur -> Vocabulary link disappears with exact boundaries, which raises the question whether part of that link comes from detection. dur -> Vocabulary-specific by
+group: first 22 battles, exact turns +0.023 (n=45); next 19, detected +0.261 (n=39), exact -0.018; other rounds, detected +0.150 (n=563). The first 22 alone are
+not a clear contrast with the rest (about 1.4 standard errors), but the same-battles difference is. So dur -> Vocabulary (+0.17 in Phase 7d) is not established as
+real and should not be reported as a judged-criteria result until it holds on exact turns.
 These 39 rounds are small and unusual: energy, inverted are negative here, positive on all rounds, so only the hand minus detected column is used.
