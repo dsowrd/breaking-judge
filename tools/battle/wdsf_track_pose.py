@@ -102,14 +102,14 @@ def track_features(g):
 def select_turn(t, tid, box, kp, score, dur):
     """Choose the dancer's track at every sampled time of one turn. Returns (times, row index of the chosen detection).
 
-    Track score (constant over a track; every feature is computed before looking at any judge label):
+    Track features (constant over a track; no judge label is used). A track must be eligible, then the highest score wins:
       activity  median joint speed in body scales / s (the dancer moves, the opponent and judges mostly do not)
       size      median body scale / frame height (the broadcast camera frames the dancer)
       central   mean closeness of the box centre to the frame centre (the operator follows the dancer)
-      floor     share of samples whose box bottom is in the lower 45% of the frame (judges and seated crowd are higher)
+      floor     share of samples whose box bottom is in the lower 45% of the frame (kept for inspection, not used)
       cut       share of samples with the box touching the frame's bottom edge (foreground heads)
       kpconf    mean keypoint score
-    A track shorter than 1 s cannot win on its own unless nothing else is present.
+    A track shorter than 1 s is down-weighted. Frames with no eligible track have no pose (ok = False).
     """
     scale = np.maximum(box[:, 2] - box[:, 0], box[:, 3] - box[:, 1])
     tracks = {}
@@ -133,13 +133,19 @@ def select_turn(t, tid, box, kp, score, dur):
         tracks[k] = dict(m=m, n=len(m), activity=activity, size=float(mid / H),
                          central=float(np.exp(-((cx - 0.5) / 0.3) ** 2).mean()), floor=float((bottom > 0.55).mean()),
                          cut=float((bottom > 0.985).mean()), kpconf=float(c.mean()))
+    # Eligibility first: a wrong person is worse than no pose (Phase 7c). Thresholds set on the 22 frames where the old
+    # selection failed; the selection is judged on fresh random frames.
     for v in tracks.values():
-        v['score'] = (v['activity'] / 2.0 + 1.5 * min(v['size'] / 0.5, 1.5) + 1.0 * v['central'] + 1.0 * v['floor']
-                      - 1.5 * v['cut'] + 0.5 * v['kpconf']) * min(v['n'] / 10.0, 1.0)
+        v['eligible'] = (v['activity'] >= 0.8 and v['size'] >= 0.18 and v['central'] >= 0.5 and v['cut'] <= 0.3
+                         and v['kpconf'] >= 0.5)
+        v['score'] = (min(v['activity'], 3.0) + 1.0 * min(v['size'] / 0.5, 1.5) + 0.5 * v['central']
+                      + 0.5 * v['kpconf']) * min(v['n'] / 10.0, 1.0)
     times = np.unique(t)
     best = np.full(len(times), -1, np.int64)
     bs = np.full(len(times), -np.inf)
     for v in tracks.values():
+        if not v['eligible']:
+            continue
         pos = np.searchsorted(times, t[v['m']])
         up = v['score'] > bs[pos]
         best[pos[up]] = v['m'][up]
