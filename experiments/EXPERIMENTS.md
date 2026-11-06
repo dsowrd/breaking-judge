@@ -802,3 +802,42 @@ Queue `scripts/phase6c_queue.sh`, GPU 0/1/3. Paired t over the 12 runs.
 Reading: Beat Align adds nothing on top of pose and nothing alone; optical flow (another motion input) adds nothing
 either, alone or with pose. The RG gain is specific to the athlete's pose; pose add (0.798) stays the best setting, so
 no new Fis-V run is needed (pose add was already run there: 0.787 vs 0.788).
+
+## Phase 7: judging criteria from motion (WDSF, 2026-11-06)
+
+Question (정현도 approved 11/6): can interpretable motion measures track the judges' *criterion-specific* scores?
+`tools/battle/criteria_validity.py` (beats → measures → validity; CPU only, ~6 min). Rounds = WDSF 5-criteria rounds
+with both dancers' turns measured (automatic turn segmentation, `wdsf_turns.csv`): 641 rounds, 255 battles, 25 events
+(45 rounds hand-segmented). Measure = blue − red (mean over the dancer's turns in the round); target = judge mean per
+round, raw and criterion-specific (criterion − mean of the five). Spearman, battle-bootstrap 95% CI.
+
+**Labels (2,699 rounds × 9 judges).** Criteria are not one halo: Technique–Originality 0.31, Technique–Execution 0.83.
+PCA: PC1 73% (overall), PC2 14% = Technique −0.63 / Execution −0.36 vs Originality +0.59 / Musicality +0.35
+(physical vs artistic). Split-half reliability (Spearman–Brown, 9 judges) raw 0.76–0.82, **criterion-specific part
+0.44 (Vocabulary) – 0.73 (Technique)**: judges agree on how criteria differ, so criterion-specific validation is possible.
+
+**Pre-specified hypotheses (measure → its own criterion-specific part):**
+
+| measure | criterion | ρ [95% CI] | p | highest of the 5 specific parts |
+|---|---|---|---|---|
+| distinct upper / lower codes per 16 s | Vocabulary | +0.039 / +0.037 | 0.32 / 0.35 | no |
+| (upper, lower) code-pair entropy | Vocabulary | +0.072 [−0.001, +0.141] | 0.055 | yes |
+| code rarity upper / lower / transitions (leave-athlete-out) | Originality | +0.025 / −0.059 / −0.028 | ≥ 0.16 | no |
+| Beat Align Score / beat hit / speed–onset corr | Musicality | −0.060 / +0.046 / +0.007 | ≥ 0.15 | no |
+| inverted share | Technique | +0.016 | 0.73 | no |
+| shoulder spin p90 | Technique | +0.078 | 0.070 | yes |
+| **joint-speed p90 (energy)** | **Technique** | **+0.208 [+0.131, +0.287]** | **< 0.001** | **yes** |
+| jerk (expected −) | Execution | +0.136 [+0.055, +0.218] | < 0.001 | no (sign reversed; tracks energy) |
+
+- **Energy → Technique-specific** holds in all 5 event folds (0.13–0.38), after controlling duration + jerk (partial
+  +0.146) or overall preference (+0.185), and is larger on the 45 hand-segmented rounds (0.49). Energy also tracks the
+  physical-vs-artistic axis (PC2, +0.204 [+0.125, +0.287]) and is negative for Originality / Musicality specific parts
+  (−0.15 / −0.13): a discriminant pattern.
+- Not pre-specified: **turn duration → Vocabulary-specific +0.168 [+0.092, +0.246]**, all 5 folds positive (0.05–0.28),
+  unchanged after controlling overall (+0.169). Longer turns show more moves.
+- **Codebook measures fail (no-go for the pre-registered codebook hypothesis):** the codes saturate (median 33 of 40
+  upper codes distinct within 16 s; pair entropy 3.68 of max 3.69). 0.4 s codes are pose fragments, not moves, so
+  repetition of moves is invisible to them. Beat Align does not track Musicality either.
+- Reading: the physical side of judging (Technique) is measurable from 2D pose; the artistic side (Originality,
+  Musicality) and Vocabulary-beyond-duration are not, with these measures. Next candidates: move-level units (code
+  n-grams / longer windows, or coarser codebooks), and turn segmentation quality (hand subset is stronger).
