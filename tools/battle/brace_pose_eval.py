@@ -78,8 +78,8 @@ def run(a):
     if a.videos:
         vids = a.videos.split(',')
     vids = vids[a.shard::a.nshards]
-    yolo = YOLO(WEIGHTS)
-    kr = torchvision.models.detection.keypointrcnn_resnet50_fpn(weights='DEFAULT').eval().to('cuda')
+    yolo = YOLO(a.weights or WEIGHTS)
+    kr = None if a.weights else torchvision.models.detection.keypointrcnn_resnet50_fpn(weights='DEFAULT').eval().to('cuda')
     t0, done = time.time(), 0
     for iv, vid in enumerate(vids):
         dst = f'{OUT}/{vid}{a.tag}.npz'
@@ -103,6 +103,9 @@ def run(a):
                     rec['box'].append(y.boxes.xyxy.cpu().numpy())
                     rec['kp'].append(kp)
                     rec['score'].append(y.boxes.conf.cpu().numpy())
+                if kr is None:
+                    done += 1
+                    continue
                 x = torch.from_numpy(np.ascontiguousarray(im[::2, ::2, ::-1])).permute(2, 0, 1).float().div(255).to('cuda')
                 with torch.no_grad():
                     q = kr([x])[0]
@@ -205,6 +208,7 @@ if __name__ == '__main__':
     p.add_argument('--offset', type=int, default=0)
     p.add_argument('--tag', default='')
     p.add_argument('--out', default='')
+    p.add_argument('--weights', default=None)                 # fine-tuned YOLO; skips Keypoint R-CNN
     p.add_argument('--min_yolo', type=float, default=0.1)     # detections below this score do not exist for score
     p.add_argument('--min_krcnn', type=float, default=0.1)    # 0.5 = what the old pipeline stored
     a = p.parse_args()

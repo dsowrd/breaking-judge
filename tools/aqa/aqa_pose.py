@@ -30,6 +30,7 @@ FFMPEG = os.environ.get('FFMPEG', '/home/irl/anaconda3/bin/ffmpeg')
 FFPROBE = os.environ.get('FFPROBE', '/home/irl/anaconda3/bin/ffprobe')
 W, H = 960, 540
 MAXP = 10    # crowds: with 6 the athlete in a wide shot can be dropped behind spectators
+TAG = os.environ.get('AQA_POSE_TAG', '')     # _y: YOLO11x-pose -> pose_det_y, pose_seq_y
 SETS = {'fisv': ('/data/mlavl/videos/fisv_raw/videos', '/data/mlavl/features/FISV'),
         'rg': ('/data/mlavl/videos/rg_raw/videos', '/data/mlavl/features/RG')}
 
@@ -67,7 +68,60 @@ def vid_id(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 
+def detect_yolo(a):
+    """same file format as detect, YOLO11x-pose (conf 0.25), keypoint scores x 10 to match the R-CNN score range of track"""
+    from ultralytics import YOLO
+    model = YOLO(a.weights)
+    out_dir = os.path.join(SETS[a.set][1], f'pose_det{TAG}')
+    os.makedirs(out_dir, exist_ok=True)
+    paths = videos(a.set)[a.shard::a.nshards]
+    for k, path in enumerate(paths):
+        dst = os.path.join(out_dir, vid_id(path) + '.npz')
+        if os.path.exists(dst):
+            continue
+        w0, h0, fps, nf = probe(path)
+        sx, sy = w0 / W, h0 / H
+        F_, KP, BX, SC, batch = [], [], [], [], []
+
+        def flush():
+            if not batch:
+                return
+            res = model.predict([fr[:, :, ::-1] for _, fr in batch], conf=0.25, iou=0.7, imgsz=960, verbose=False, device=0)
+            for (f, _), r in zip(batch, res):
+                kp = np.zeros((MAXP, 17, 3), np.float32)
+                bx = np.zeros((MAXP, 4), np.float32)
+                sc = np.zeros(MAXP, np.float32)
+                n = min(len(r.boxes), MAXP)
+                if n:
+                    o = r.boxes.conf.cpu().numpy().argsort()[::-1][:n].copy()
+                    b = r.boxes.xywh.cpu().numpy()[o]
+                    b[:, 0] -= b[:, 2] / 2
+                    b[:, 1] -= b[:, 3] / 2
+                    b[:, [0, 2]] *= sx
+                    b[:, [1, 3]] *= sy
+                    kk = r.keypoints.xy.cpu().numpy()[o]
+                    kp[:n, :, 0], kp[:n, :, 1] = kk[..., 0] * sx, kk[..., 1] * sy
+                    kp[:n, :, 2] = r.keypoints.conf.cpu().numpy()[o] * 10
+                    bx[:n], sc[:n] = b, r.boxes.conf.cpu().numpy()[o]
+                F_.append(f); KP.append(kp); BX.append(bx); SC.append(sc)
+            batch.clear()
+
+        for f, fr in frames_iter(path, a.stride):
+            batch.append((f, fr))
+            if len(batch) == 16:
+                flush()
+        flush()
+        tmp = dst[:-4] + f'.tmp{a.shard}.npz'
+        np.savez(tmp, frame=np.array(F_, np.int32), kp=np.array(KP, np.float32).reshape(-1, MAXP, 17, 3),
+                 box=np.array(BX, np.float32).reshape(-1, MAXP, 4), det_score=np.array(SC, np.float32).reshape(-1, MAXP),
+                 fps=fps, nframes=nf, size=np.array([w0, h0]), stride=a.stride)
+        os.replace(tmp, dst)
+        print(f'[{k + 1}/{len(paths)}] {vid_id(path)}: {len(F_)} frames of {nf}', flush=True)
+
+
 def detect(a):
+    if a.yolo:
+        return detect_yolo(a)
     from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
     torch.set_num_threads(4)
     dev = torch.device('cuda')
@@ -133,8 +187,8 @@ def iou(b, c):
 
 
 def track(a):
-    src = os.path.join(SETS[a.set][1], 'pose_det')
-    dst = os.path.join(SETS[a.set][1], 'pose_seq')
+    src = os.path.join(SETS[a.set][1], f'pose_det{TAG}')
+    dst = os.path.join(SETS[a.set][1], f'pose_seq{TAG}')
     os.makedirs(dst, exist_ok=True)
     stats = []
     for f in sorted(glob.glob(f'{src}/*.npz')):
@@ -185,6 +239,8 @@ def main():
     p.add_argument('--nshards', type=int, default=1)
     p.add_argument('--only', default='')
     p.add_argument('--reverse', action='store_true')
+    p.add_argument('--yolo', action='store_true')
+    p.add_argument('--weights', default='/data/mlavl/cache/ultralytics/yolo11x-pose.pt')
     a = p.parse_args()
     detect(a) if a.cmd == 'detect' else track(a)
 

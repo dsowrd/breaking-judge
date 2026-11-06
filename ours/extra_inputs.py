@@ -32,7 +32,7 @@ def _load(src, name, video_path):
         if src == 'beat':
             x = np.load(f'{d}/beat/{name}.npz')['b']
         else:
-            z = np.load(f'{d}/choreo_pose/{name}.npz')
+            z = np.load(f'{d}/choreo_pose{os.environ.get("AQA_POSE_TAG", "")}/{name}.npz')
             x = z['x'] if src == 'pose' else z['c']
             x = np.concatenate([x[:, :DIMS[src] - 1], x[:, -1:]], 1)
         _npz[key] = x.astype(np.float32)

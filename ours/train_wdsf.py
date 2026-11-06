@@ -63,7 +63,7 @@ def build_rows(target, min_clips=8, feat='pamfn'):
             if feat != 'pamfn':
                 # 'pose' = hand-made 114-d statistics; 'vq' = Bailando-style choreographic-memory code vectors
                 # (tools/battle/choreo_memory.py); 'vqpose' = both concatenated
-                parts = [np.load(f'{F}/{n}/{t.video_id}.npz') for n in {'pose': ['pose'], 'vq': ['vq'], 'vqpose': ['pose', 'vq']}[feat]]
+                parts = [np.load(f'{F}/{n}/{t.video_id}.npz') for n in {'vqpose': ['pose', 'vq']}.get(feat, [feat])]
                 v = np.concatenate([q['pose'].astype(np.float32) for q in parts], 1)
                 ok = np.all([q['has_pose'] > 0 for q in parts], 0)
             cache[t.video_id] = (v, d['audio'].astype(np.float32), centre, ok)

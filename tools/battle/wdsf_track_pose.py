@@ -26,7 +26,8 @@ F = '/data/mlavl/features/WDSF'
 D = '/data/mlavl/datasets/wdsf'
 V = '/data/mlavl/videos/wdsf'
 FFMPEG = os.environ.get('FFMPEG', '/home/irl/anaconda3/bin/ffmpeg')
-WEIGHTS = '/data/mlavl/cache/ultralytics/yolo11x-pose.pt'
+WEIGHTS = os.environ.get('WDSF_YOLO_WEIGHTS', '/data/mlavl/cache/ultralytics/yolo11x-pose.pt')
+T = os.environ.get('WDSF_TRACK_TAG', '')     # _ft: fine-tuned model -> yolo_tracks_ft, pose_seq2_ft
 W, H, FPS, IMGSZ = 1280, 720, 10, 960
 HZ = 10.0
 
@@ -56,13 +57,13 @@ def turn_frames(vid, start, end):
 
 def track(a):
     from ultralytics import YOLO
-    os.makedirs(f'{F}/yolo_tracks', exist_ok=True)
+    os.makedirs(f'{F}/yolo_tracks{T}', exist_ok=True)
     tab = turns_table(a.turns)
     vids = sorted(tab.video_id.unique())[a.shard::a.nshards]
     model = YOLO(WEIGHTS)
     t0, frames = time.time(), 0
     for iv, vid in enumerate(vids):
-        dst = f'{F}/yolo_tracks/{vid}.npz'
+        dst = f'{F}/yolo_tracks{T}/{vid}.npz'
         if os.path.exists(dst):
             continue
         out = {k: [] for k in ('turn', 't', 'tid', 'box', 'kp', 'score')}
@@ -155,10 +156,10 @@ def select_turn(t, tid, box, kp, score, dur):
 
 
 def select(a):
-    os.makedirs(f'{F}/pose_seq2', exist_ok=True)
+    os.makedirs(f'{F}/pose_seq2{T}', exist_ok=True)
     tab = turns_table(a.turns)
     for vid in sorted(tab.video_id.unique()):
-        src = f'{F}/yolo_tracks/{vid}.npz'
+        src = f'{F}/yolo_tracks{T}/{vid}.npz'
         if not os.path.exists(src):
             continue
         z = np.load(src)
@@ -203,7 +204,7 @@ def select(a):
             boxes[g[near]] = b[j[near]]
             tids[g[near]] = z['tid'][chosen][j[near]]
             conf[g[near]] = kp[j[near], :, 2].mean(1)
-        np.savez(f'{F}/pose_seq2/{vid}.npz', rel=rel, root=root, ok=ok, hz=HZ, box=boxes, tid=tids, conf=conf)
+        np.savez(f'{F}/pose_seq2{T}/{vid}.npz', rel=rel, root=root, ok=ok, hz=HZ, box=boxes, tid=tids, conf=conf)
     print('done')
 
 
@@ -227,7 +228,7 @@ def sheet(a):
             want.append([int(r.turn), v, float(rng.uniform(r.start_s, r.end_s))])
     tiles = []
     for turn, vid, ts in want:
-        z = np.load(f'{F}/yolo_tracks/{vid}.npz')
+        z = np.load(f'{F}/yolo_tracks{T}/{vid}.npz')
         m = np.where(z['turn'] == turn)[0]
         if not len(m):
             continue

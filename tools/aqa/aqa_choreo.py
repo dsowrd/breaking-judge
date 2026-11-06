@@ -24,6 +24,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'battle'))
 import choreo_memory as CM  # noqa: E402
 
+TAG = os.environ.get('AQA_POSE_TAG', '')
 FEAT = {'fisv': '/data/mlavl/features/FISV', 'rg': '/data/mlavl/features/RG'}
 WIN = 32
 
@@ -48,7 +49,7 @@ def vst_len(set_):
 def windows(set_):
     U, L = [], []
     for n in train_names(set_):
-        p = f'{FEAT[set_]}/pose_seq/{n}.npz'
+        p = f'{FEAT[set_]}/pose_seq{TAG}/{n}.npz'
         if not os.path.exists(p):
             continue
         z = np.load(p)
@@ -91,7 +92,7 @@ def train(a):
                     base = (Xv - Xv.mean((0, 1))).abs().mean().item()
                 print(f'{part} step {step}: train rec {rec.item():.4f} | val rec {rv:.4f} (mean-pose {base:.4f}) '
                       f'| val perplexity {pv.item():.0f} / {CM.K}, codes used {len(torch.unique(iv))}', flush=True)
-        torch.save(m.state_dict(), f'{FEAT[a.set]}/choreo_pose_{part}.pt')
+        torch.save(m.state_dict(), f'{FEAT[a.set]}/choreo_pose{TAG}_{part}.pt')
 
 
 def encode(a):
@@ -101,14 +102,14 @@ def encode(a):
     ms = {}
     for part, dim in (('upper', len(CM.UPPER) * 2), ('lower', len(CM.LOWER) * 2 + 2)):
         m = CM.build_vqvae(dim).to(dev)
-        m.load_state_dict(torch.load(f'{FEAT[a.set]}/choreo_pose_{part}.pt', map_location=dev))
+        m.load_state_dict(torch.load(f'{FEAT[a.set]}/choreo_pose{TAG}_{part}.pt', map_location=dev))
         ms[part] = m.eval()
-    out_dir = f'{FEAT[a.set]}/choreo_pose'
+    out_dir = f'{FEAT[a.set]}/choreo_pose{TAG}'
     os.makedirs(out_dir, exist_ok=True)
     lens = vst_len(a.set)
     D, cover = CM.CODE_DIM, []
     for name, T in sorted(lens.items()):
-        p = f'{FEAT[a.set]}/pose_seq/{name}.npz'
+        p = f'{FEAT[a.set]}/pose_seq{TAG}/{name}.npz'
         x = np.zeros((T, 2 * D + 3), np.float32)
         if os.path.exists(p):
             z = np.load(p)
