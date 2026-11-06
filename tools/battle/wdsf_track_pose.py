@@ -200,11 +200,64 @@ def select(a):
     print('done')
 
 
+def sheet(a):
+    """Contact sheet of chosen dancers, graded by eye. --turns csv with turn, video_id, ts draws those frames; without
+    it, --n random samples from turns that have tracks (--seed)."""
+    import glob
+    import io
+    from PIL import Image, ImageDraw
+    E = [(5, 7), (7, 9), (6, 8), (8, 10), (11, 13), (13, 15), (12, 14), (14, 16), (5, 6), (11, 12), (5, 11), (6, 12)]
+    tab = turns_table()
+    rng = np.random.default_rng(a.seed)
+    if a.turns:
+        want = pd.read_csv(a.turns)[['turn', 'video_id', 'ts']].values.tolist()
+    else:
+        vids = sorted(os.path.basename(f)[:-4] for f in glob.glob(f'{F}/yolo_tracks/*.npz'))
+        want = []
+        while len(want) < a.n:
+            v = vids[rng.integers(len(vids))]
+            r = tab[tab.video_id == v].sample(1, random_state=int(rng.integers(1 << 30))).iloc[0]
+            want.append([int(r.turn), v, float(rng.uniform(r.start_s, r.end_s))])
+    tiles = []
+    for turn, vid, ts in want:
+        z = np.load(f'{F}/yolo_tracks/{vid}.npz')
+        m = np.where(z['turn'] == turn)[0]
+        if not len(m):
+            continue
+        times, best, tracks = select_turn(z['t'][m], z['tid'][m], z['box'][m], z['kp'][m], z['score'][m], 0)
+        i = int(np.argmin(np.abs(times - ts)))
+        raw = subprocess.run([FFMPEG, '-v', 'error', '-ss', f'{times[i]:.3f}', '-i', f'{V}/{vid}.mp4', '-frames:v', '1', '-vf',
+                              f'scale={W}:{H}', '-f', 'image2pipe', '-vcodec', 'png', '-'], capture_output=True).stdout
+        im = Image.open(io.BytesIO(raw)).convert('RGB')
+        dr = ImageDraw.Draw(im)
+        here = m[z['t'][m] == times[i]]
+        for b in z['box'][here]:
+            dr.rectangle(list(b), outline=(255, 255, 255), width=2)
+        if best[i] >= 0:
+            kp = z['kp'][m][best[i]]
+            b = z['box'][m][best[i]]
+            dr.rectangle(list(b), outline=(0, 255, 0), width=5)
+            for x, y in E:
+                dr.line([tuple(kp[x, :2]), tuple(kp[y, :2])], fill=(60, 170, 255) if y <= 10 else (255, 60, 60), width=4)
+        im = im.resize((480, 270))
+        ImageDraw.Draw(im).text((5, 5), f'{vid} {times[i]:.1f}s', fill=(255, 255, 0))
+        tiles.append(im)
+    cols = 4
+    canvas = Image.new('RGB', (480 * cols, 270 * ((len(tiles) + cols - 1) // cols)))
+    for k, im in enumerate(tiles):
+        canvas.paste(im, ((k % cols) * 480, (k // cols) * 270))
+    canvas.save(a.out, quality=85)
+    print('wrote', a.out, len(tiles))
+
+
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
-    p.add_argument('cmd', choices=['track', 'select'])
+    p.add_argument('cmd', choices=['track', 'select', 'sheet'])
     p.add_argument('--shard', type=int, default=0)
     p.add_argument('--nshards', type=int, default=1)
     p.add_argument('--turns', default=None)
+    p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--n', type=int, default=24)
+    p.add_argument('--out', default='sheet.jpg')
     a = p.parse_args()
-    {'track': track, 'select': select}[a.cmd](a)
+    {'track': track, 'select': select, 'sheet': sheet}[a.cmd](a)
