@@ -889,3 +889,9 @@ in ~18 / 22, and by YOLO11x-pose (conf ≥ 0.25) in ~19–20 / 22 with far fewer
 0.2. So the failures come from the 0.5 storage threshold plus per-frame selection, not from bodies being undetectable.
 Fix: keep lower-score detections and select the dancer per *track* over the whole turn (the most active track on the
 stage floor) instead of per frame.
+
+**Same visual check on the paper datasets (`tools/aqa/aqa_pose_check.py`, 2 sheets each, random frames, 2026-11-06):**
+RG 48 frames: athlete 47, no pose 1 (lying on the mat), wrong person 0. Fis-V 48 frames: athlete 44, wrong person 1
+(crowd, skater in a spiral), no pose 3 (close-ups). One performer and a clean background make the size-based rule work,
+so the RG / Fis-V pose results (Phase 6b, 6c) are not affected by the WDSF selection problem. Keypoints look rough
+during blurred skating spins (one observation that fits the TES hypothesis; not measured).
