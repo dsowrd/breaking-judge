@@ -841,3 +841,25 @@ PCA: PC1 73% (overall), PC2 14% = Technique −0.63 / Execution −0.36 vs Origi
 - Reading: the physical side of judging (Technique) is measurable from 2D pose; the artistic side (Originality,
   Musicality) and Vocabulary-beyond-duration are not, with these measures. Next candidates: move-level units (code
   n-grams / longer windows, or coarser codebooks), and turn segmentation quality (hand subset is stronger).
+
+### Phase 7b: move-level units from the codebook (2026-11-06)
+
+`tools/battle/move_units.py`: windows of L consecutive 0.4 s codes (hop L/2) → mean upper / lower code vectors of each
+half → PCA 32 → k-means K "moves" (no judge labels). Pre-specified main setting L = 8 (3.2 s), K = 64; grid L ∈ {5, 8,
+12} × K ∈ {32, 64, 128} reported as sensitivity (`{D}/move_validity_grid.csv`). Same 641 rounds and battle bootstrap.
+
+| measure → criterion-specific | main L8 K64: ρ [95% CI], p | grid (9 settings): ρ range | own criterion highest of 5 |
+|---|---|---|---|
+| distinct moves per 12 windows (rarefied) → Vocabulary | +0.071 [−0.006, +0.157], 0.070 | +0.044 … +0.113 | 9 / 9 |
+| move entropy → Vocabulary | +0.058, 0.14 | — | yes (main) |
+| novelty vs own earlier rounds → Vocabulary | −0.097 [−0.192, −0.007], 0.038 (sign reversed) | −0.067 … −0.127 | 0 / 9 |
+| move rarity (leave-athlete-out) → Originality | +0.003, 0.91 | −0.093 … +0.015 | 0 / 9 |
+| move-transition rarity → Originality | −0.036, 0.33 | — | no |
+
+- Move diversity points the right way in all 9 settings, is unrelated to turn length (ρ with duration −0.04…+0.04) and
+  is always most related to Vocabulary among the five specific parts, but it is small (ρ ≈ 0.07) and not significant
+  in the pre-specified setting. Weak, consistent evidence only.
+- Originality: no signal from any move-rarity measure. Novelty across rounds has the wrong sign.
+- Units are still noisy: median 10.1 of 12 windows are different moves (K = 64), and the same dancer's move histograms in
+  different battles are only slightly more similar than different dancers' (AUC 0.565, 2,181 same-dancer pairs).
+  A move vocabulary needs better motion units than 2D pose on fast, inverted breaking moves gives here.
