@@ -957,3 +957,38 @@ grid, not a finding.
 Reading: fixing the person made the inverted and spinning measures valid for Technique, as a wrong-person error on floor moves
 would predict. It did not create move units or artistic measures. Joint errors in power moves are the next suspect for the unit
 problem, not shown yet. BRACE manual keypoints (26.7k frames) can measure and fine-tune this.
+
+### Skeleton severity of the 28 "off" frames (정현도, 2026-11-06)
+
+Grades: `ours/wdsf/pose_grades_1106_hyundo_severity.json`. Minor = end joints only; limb = one arm or leg wrong, or left / right
+swapped; structure = torso direction wrong or upside down. The levels were defined after the first grading.
+
+| move (right-person frames) | n | good | minor | limb | structure | serious (limb + structure) |
+| --- | --- | --- | --- | --- | --- | --- |
+| power | 20 | 3 | 6 | 7 | 4 | 11 (55%) |
+| footwork | 15 | 8 | 2 | 4 | 1 | 5 (33%) |
+| freeze | 2 | 0 | 0 | 1 | 1 | 2 |
+| toprock | 11 | 10 | 1 | 0 | 0 | 0 |
+| transition | 7 | 7 | 0 | 0 | 0 | 0 |
+| not dancing | 8 | 7 | 1 | 0 | 0 | 0 |
+| all | 63 | 35 | 10 | 12 | 6 | 18 (29%) |
+
+Serious, power vs toprock: 11 / 20 vs 0 / 11, Fisher p about 0.002.
+
+## Phase 7e: pose accuracy on BRACE manual keypoints (2026-11-06, in progress)
+
+`tools/battle/brace_pose_eval.py`, `scripts/phase7e_brace.sh`: 26,676 manual frames, 81 videos, GPU 0, 3 shards, 44 min. Input as in the
+WDSF pipeline. The detection closest to the truth (highest OKS) is scored, so this is joint accuracy, not person choice. Frame ids are
+1-based; alignment confirmed on 12 videos (PCK@0.05 at offset 0 / +1 / -1 from the corrected index: 0.184 / 0.118 / 0.096). The third
+column of the manual files is not meaningful (BRACE README); an early scoring run used it as visibility and was fixed.
+
+| YOLO11x-pose, conf >= 0.1 | frames | PCK@0.1, no detection = 0 | serious (PCK@0.2 < 0.5, incl. no detection) |
+| --- | --- | --- | --- |
+| toprock | 2,000 | 0.703 [0.647, 0.747] | 0.160 [0.113, 0.219] |
+| footwork | 8,397 | 0.315 [0.283, 0.346] | 0.507 [0.461, 0.556] |
+| powermove | 16,207 | 0.203 [0.188, 0.220] | 0.669 [0.641, 0.698] |
+
+CIs: video bootstrap. The manual frames look selected towards hard moments (61% power moves, much occlusion; the README does not state
+the selection), so read differences between moves and models, not an average error of BRACE or WDSF. Keypoint R-CNN with scores down
+to 0.1 scored similarly here, but best-of-many matching favours a detector with many junk boxes; the fair comparison at the old
+storage threshold (0.5) is pending.
