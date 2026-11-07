@@ -55,9 +55,14 @@ def score(df, col):
     d = df[(df.margin != 0) & (df[col] != 0)]
     ok = (np.sign(d.margin) == np.sign(d[col])).astype(float)
     r = ci([v.values for _, v in ok.groupby([d.competition, d.battle_id])])
+    res = dict(n=len(d), round=ok.mean(), r_lo=r[0], r_hi=r[1], r_p50=r[2])
     w = within_table(d, col)
-    q = ci([v.ok.values for _, v in w.groupby('b')])
-    return dict(n=len(d), round=ok.mean(), r_lo=r[0], r_hi=r[1], r_p50=r[2], pairs=len(w), within=w.ok.mean(), w_lo=q[0], w_hi=q[1], w_p50=q[2])
+    if len(w):    # dancer strength is constant within a battle, so it has no within-battle order
+        q = ci([v.ok.values for _, v in w.groupby('b')])
+        res.update(pairs=len(w), within=w.ok.mean(), w_lo=q[0], w_hi=q[1], w_p50=q[2])
+    else:
+        res.update(within=np.nan)
+    return res
 
 
 def strength(base, t, js):
@@ -101,7 +106,7 @@ if __name__ == '__main__':
     rows = []
     for t in TARGETS:
         base = load([f'{L}/probe_pamfn_k8_{t}'])
-        base = base[base.margin != 0].reset_index(drop=True)
+        base = base[base.margin != 0].merge(js[KEY].drop_duplicates(), on=KEY).reset_index(drop=True)    # five-slider rounds only
         chk = js.groupby(KEY)[t].mean().reset_index().merge(base, on=KEY)
         print(f'\n== {t}: {len(base)} rounds; margin matches judge mean, corr {chk[t].corr(chk.margin):.4f}', flush=True)
         items = [('Blue rule', dict(n=len(base), round=(base.margin > 0).mean(), within=.5))]
@@ -109,7 +114,7 @@ if __name__ == '__main__':
         for name, pat in METHODS:
             r = runs(pat, t)
             if r:
-                s = score(load(r), 'pred')
+                s = score(load(r).merge(base[KEY], on=KEY), 'pred')
                 s['seeds'] = len(r) if pat.endswith('*') else 0
                 items.append((name, s))
         items.append(('Judges, half vs half', judges(base, t, js)))
