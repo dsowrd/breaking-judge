@@ -1176,3 +1176,30 @@ Paired t over 12 runs:
 - Dancer strength = blue minus red mean Technique margin at other events (outside the video). On the 584 rounds where both athletes have other events: **strength alone 0.700, model 0.572, rule 0.527.** Rank correlation model vs strength only +0.175.
 - Joint rank regression on the margin, battle bootstrap: prediction alone +0.210 [+0.123, +0.296]; strength alone +0.541 [+0.451, +0.620]; **together prediction +0.119 [+0.049, +0.193], strength +0.520 [+0.429, +0.602].** So the model holds something strength does not, and much of what judges give in a round is who the dancer is.
 - Simple measures on 582 rounds, fine-tuned pose: sign accuracy inverted 0.553, energy 0.572, spin 0.527, jerk 0.557, dur 0.485. Five measures in ridge on the same folds 0.550; model minus ridge +0.022 [−0.032, +0.076], p = .235. Joint: prediction +0.182 [+0.098, +0.274], ridge +0.093 [+0.003, +0.178].
+
+### Phase 7g: 2022 holdout (second addendum, `scripts/phase7g_holdout.sh`, `ours/wdsf_holdout.py`, 2026-11-07, 6 runs in about 45 min, GPU 0)
+
+Trained on all 637 five-slider Technique rounds, epoch chosen on the Brisbane event (epoch 5 in all six runs), predicted 111 rounds of Kitakyushu, Manchester and Seoul.
+
+**Primary test passes.** `vq2_ft` 3-seed ensemble **0.667 [0.579, 0.750]**, rule 0.523, p(<=rule) = .029, p(<=50%) < .001, seeds .694 .613 .658.
+
+| secondary | result |
+| --- | --- |
+| `vq2` 3-seed ensemble | 0.640 [0.556, 0.718], p(<=rule) = .080 |
+| `vq2_ft` − `vq2` | +0.027 [−0.054, +0.108], p = .281 |
+| athletes absent from training | only 2 rounds, no test possible |
+| per event `vq2_ft` | Kitakyushu .675 (rule .525), Manchester .714 (rule .686), Seoul .611 (rule .361) |
+| dancer strength on 81 rounds with a strength estimate | strength 0.802, model 0.679, rule 0.568; model vs strength rank corr +0.512 |
+| joint rank regression, 81 rounds | prediction +0.220 [+0.056, +0.411], p = .006; strength +0.583 [+0.359, +0.739] |
+
+**Limit:** 109 of 111 rounds have an athlete in training, so these results do not exclude a model that recognises dancers. Correlation with strength is much higher here (0.512) than in cross-validation (0.175). Strength is also a noisy estimate, so a positive joint coefficient could partly be a better estimate of the same thing.
+
+Pose-error test on the same rounds (110 rounds, Technique minus the mean of six sliders):
+
+| measure | old pose rho | fine-tuned rho | joint old | joint new | old − new |
+| --- | --- | --- | --- | --- | --- |
+| inverted | +0.209 [−0.002, +0.407] | +0.157 [−0.094, +0.375] | +0.335 [−0.029, +0.715] | −0.141 [−0.578, +0.288] | +0.477 [−0.283, +1.254] |
+| energy | +0.114 [−0.117, +0.336] | −0.053 [−0.251, +0.155] | +0.222 [−0.060, +0.458] | −0.183 [−0.417, +0.079] | +0.405 [−0.081, +0.800] |
+| spin | +0.118 [−0.102, +0.329] | +0.059 [−0.167, +0.279] | +0.141 [−0.135, +0.416] | −0.034 [−0.320, +0.245] | +0.176 [−0.326, +0.688] |
+
+Expected: inverted positive on the fine-tuned pose (positive, interval includes 0), energy and spin larger on the old pose (yes in direction, intervals include 0), inverted larger on the new pose (**no, the opposite direction**, wide interval). So the holdout does not confirm "inverted is the better measure on the new pose"; energy and spin weakening on the new pose repeats, but is not established at this size.

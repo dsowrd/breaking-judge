@@ -68,3 +68,12 @@ saved YOLO, saved codebooks (`vq2_ft`, `vq2`), z-score from training rounds. Sam
 - Power: at about 75 rounds the accuracy CI is about +/- 11 points, so a failure does not refute the earlier result. Youth may differ from
   adults (the model trained on adults only) and the segmentation here has no hand check.
 No other target, seed, feature or setting is added on this question.
+
+## Fourth addendum, fixed before computing it (2026-11-07): within-battle test, no identity possible
+Both holdouts and cross-validation cannot fully exclude a model that recognises dancers (2022: 109 of 111 rounds have an athlete in
+training). Within one battle the two dancers are the same and the blue rule is constant, so only the performance can change between
+rounds. For every pair of rounds of one battle: does the model order them as the judges' margins do (blue minus red, target's mean)?
+Ties dropped, battle bootstrap, chance 50%.
+- Main: `vq2_ft` Technique, out-of-fold predictions on the 637 five-slider rounds, one-sided p < .05 above 50%.
+- Also reported either way: the same on the 2022 holdout and Chengdu 2026, Execution, `vq2` and `vq`, the five simple measures.
+No training, no new setting. A fail would mean this model gives no evidence of reading the performance apart from who dances.
