@@ -1367,3 +1367,15 @@ Holdouts, Technique, 3 seeds each: 2022 combo .640 [.540, .734] p vs rule .063 (
 **Reading.** On breaking the combination behaves like Swin alone, not like the pose codes: Swin dominates, the codes add nothing on top, and accuracy falls where the athletes are new (.48, .45 vs .60 for codes alone),
 the expected risk of the addendum (Phase 5c: 37-41%). Higher correlation with dancer strength points the same way. On RG the same combination helped (+.024); why it helps there and not here is not tested (one guess: in RG, appearance does not give away a score the way a known dancer does in breaking).
 The holdouts, where most athletes were seen in training, are the setting where identity helps; the Chengdu +.051 is consistent with that and not significant. So for breaking the useful part of the MLAVL + Bailando combination is replacing the appearance input with Bailando codes, not adding them.
+
+### Ninth addendum: test-fold athletes removed from training (`scripts/phase7j_purge.sh`, `tools/battle/purge_eval.py`, 12 runs, 2026-11-07 19:00-19:26, GPU 0)
+Main test **FAILS** (no power): identity reliance = accuracy(size-matched random drop) - accuracy(purge), Technique, 3-seed ensembles.
+
+| | purge (no test athlete in training) | size (same number of random rounds dropped) | reliance | within purge / size |
+| --- | --- | --- | --- | --- |
+| Swin + AST (`pamfn`) | .516 [.474, .559] | .539 [.497, .582] | +.024 [-.028, +.076] | .486 / .518 |
+| Pose codes + audio (`vq2_ft`) | .534 [.492, .575] | .542 [.498, .583] | +.008 [-.035, +.050] | .495 / .537 |
+
+Main reliance(Swin) - reliance(codes) **+.016 [-.051, +.083], p = .32**. Purge codes - Swin +.019 [-.032, +.068] p = .25. Rule .523; none of the four is above it (p vs rule .27-.60).
+Training rounds fall from 477-566 to 127-290 per fold. **Reading.** The direction matches the eighth addendum (Swin leans more on who the dancer is), but cutting training to 25-55% already brings both models down to the rule
+(codes .586 → .542 with random drop), so this design cannot separate the two. The identity reading stays exploratory. Side result: accuracy depends strongly on the amount of training data, so more labelled battles are the most direct lever.
