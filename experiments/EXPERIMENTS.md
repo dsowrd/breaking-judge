@@ -1316,3 +1316,54 @@ Linear, fit centred by battle (reference: usual linear fit): Swin Technique .522
 **Reading.** Removing between-battle differences from training does not sharpen the within-battle signal; it removes it, for video and pose, linear or MLAVL. Audio is unaffected. So the video and pose signal that orders
 rounds of one battle was learned from differences between battles. Features that separate stronger from weaker dancers also order a dancer's better and worse rounds, which is why a dancer's level and a round's quality are not cleanly separable here. About 470 pairs with a noisy
 target (judges half vs half only .556 on Technique) may also simply be too few to learn from directly; these runs cannot tell these two apart. Identity removal did work as designed on the correlation with strength (+.221 to +.106). Usual training stays the method.
+
+### Benchmark table (`tools/battle/benchmark_table.py` → `experiments/benchmark_wdsf.csv`, 2026-11-07)
+Five-slider rounds with video only (640 rounds, 268 battles; total restricted the same way). Round accuracy = sign of the prediction vs the judges' mean margin; within-battle = order of two rounds of one battle (identity-free, chance .50); battle bootstrap.
+Dancer strength = the athletes' mean margin in other events (no within-battle order: constant inside a battle). Judges half vs half = random half of the panel vs the other half (a ceiling for agreement, not for accuracy).
+Linear rows: ridge on the turn feature difference, cross-validated, single fit. MLAVL rows: pairwise training, 3-seed ensemble (Vocabulary, Originality, Musicality have no Swin MLAVL runs).
+
+| round / within | total | Technique | Vocabulary | Originality | Execution | Musicality |
+| --- | --- | --- | --- | --- | --- | --- |
+| Blue rule | .544 / .500 | .523 / .500 | .549 / .500 | .551 / .500 | .494 / .500 | .571 / .500 |
+| Dancer strength (other events) | .616 / – | .661 / – | .638 / – | .666 / – | .582 / – | .609 / – |
+| Audio AST, linear | .548 / **.593** | .569 / .583 | .526 / .558 | .496 / .484 | .559 / **.590** | .527 / .548 |
+| Video Swin, linear | .544 / .501 | .591 / .549 | .568 / .500 | .535 / .482 | .541 / .515 | .557 / .475 |
+| Swin + AST, linear | .580 / .553 | .595 / **.595** | .552 / .562 | .513 / .469 | .584 / .557 | .515 / .502 |
+| Pose codes, linear | .529 / .531 | .573 / .558 | .519 / .500 | .525 / .452 | .549 / .517 | .567 / .511 |
+| MLAVL pose codes + audio | .542 / .531 | .586 / .562 | .500 / .546 | .514 / .499 | .565 / .557 | .563 / .519 |
+| MLAVL pose codes only | .546 / .524 | .575 / .543 | .514 / .502 | .524 / .540 | .549 / .492 | .538 / .475 |
+| MLAVL Swin + audio | .511 / .511 | .542 / .516 | | | .514 / .506 | |
+| MLAVL Swin + pose codes + audio | .521 / .514 | .540 / .548 | | | .495 / .534 | |
+| Judges, half vs half | .815 / .634 | .796 / .562 | .764 / .562 | .732 / .502 | .811 / .637 | .750 / .559 |
+
+n per cell and CIs in the CSV. Dancer strength on Technique is .661 here (video-matched rounds only, n = 416); the earlier .700 used all scored rounds.
+**Reading.** (1) Nothing comes close to dancer strength on round accuracy; the benchmark has to report it, or a model that recognises dancers looks good. (2) Within one battle, judges themselves agree only .50 to .64; Originality is at chance even between halves of the panel, so no model can be expected to order it. (3) Audio leads the within-battle column (total .593, Execution .590), consistent with the earlier finding that the audio signal sits in the second half of a turn. (4) A linear model on Swin + AST is at least as good as MLAVL on pose codes; MLAVL on Swin is the weakest learned row.
+
+### Late fusion (exploratory, not pre-registered, 2026-11-07)
+Rank-averaging the linear predictions. Technique: pose + AST .595 / .577, Swin + AST .597 / .564, pose + Swin .598 / .531, all three .589 / .579. With dancer strength (415 rounds): strength alone .663, strength + pose .680 [.627, .731], strength + pose + AST .675, strength + AST .663.
+Execution: pose + AST .570 / .547, Swin + AST .557 / .564, all .567 / .515; strength .583, strength + AST .602, strength + pose + AST .598, strength + pose .564. Gains over the best single input are within noise; not followed up.
+
+### Data scoping (2026-11-07, no download)
+Five-slider events: 1,197 battles, 270 with a matched video. 27 events (670 battles) have no video on @breakingforgold. The channel has 1,738 videos; 314 are used, 414 more are 100-420 s long but mostly have no scores
+(2018 World Youth, World Games 2022 round robin, YOG qualifiers). "WDSF Asian Breaking Championship Youth/Adult 2025" has about 26 videos that look matchable (the matcher requires the city in the title); not tried. Other channels not checked.
+So the labelled set can grow by at most about 10% from this channel.
+
+### Eighth addendum: Video Swin + pose codes on breaking (`scripts/phase7i_combo.sh`, `--feat swin_vq2_ft`, 2026-11-07 14:15-18:44, GPU 0)
+Main test **FAILS**: Technique, cross-validation, 3-seed ensemble **.540** [.496, .586], rule .523, p vs rule .311 (p vs 50% .039).
+
+| 3-seed ensemble, CV | Technique | Execution | total |
+| --- | --- | --- | --- |
+| Swin + pose codes (`swin_vq2_ft`) | .540 | .495 | .517 |
+| Pose codes (`vq2_ft`) | .586 | .565 | .549 |
+| Swin only (`pairv`) | .542 | .514 | .510 |
+| combo - pose codes | -.046 [-.100, +.008] p .954 | -.071 [-.123, -.017] | -.032 [-.084, +.017] |
+| combo - Swin only | -.002 [-.040, +.036] | -.019 [-.054, +.016] | +.009 [-.024, +.042] |
+| within-battle combo / pose / Swin | .548 (p .026) / .562 / .516 | .534 / .557 / .506 | .520 / .518 / .514 |
+| corr with dancer strength combo / pose / Swin | +.229 / +.174 / +.248 | +.112 / +.062 / +.125 | |
+
+Unseen athletes (Technique): at least one unseen (246 rounds) combo .541, pose .593 (p vs rule .033), Swin .556; both unseen (50 rounds, 23 battles) combo **.480**, pose **.600**, Swin **.451**. Execution both unseen: .500 / .600 / .471.
+Holdouts, Technique, 3 seeds each: 2022 combo .640 [.540, .734] p vs rule .063 (pose .667), combo - pose -.027 [-.136, +.073]; Chengdu combo .731 [.627, .831] p .003 (pose .679), combo - pose +.051 [-.072, +.183] p .242. Most holdout athletes are in training.
+
+**Reading.** On breaking the combination behaves like Swin alone, not like the pose codes: Swin dominates, the codes add nothing on top, and accuracy falls where the athletes are new (.48, .45 vs .60 for codes alone),
+the expected risk of the addendum (Phase 5c: 37-41%). Higher correlation with dancer strength points the same way. On RG the same combination helped (+.024) because RG athletes do not repeat across test and train in the same way and appearance does not identify the score.
+The holdouts, where most athletes were seen in training, are the setting where identity helps; the Chengdu +.051 is consistent with that and not significant. So for breaking the useful part of the MLAVL + Bailando combination is replacing the appearance input with Bailando codes, not adding them.
