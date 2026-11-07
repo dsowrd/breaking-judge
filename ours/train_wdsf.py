@@ -44,12 +44,14 @@ def event_of(comp):
     return re.sub(r'-(Adult|Youth)-Breaking.*', '', comp)
 
 
-def build_rows(target, min_clips=8, feat='pamfn'):
+def build_rows(target, min_clips=8, feat='pamfn', system='5crit', stats=None):
     """feat: 'pamfn' = Video Swin K600 (1024) + AST (768) per clip; 'pose' = the dancer's pose / kick-beat features
-    (114, tools/battle/wdsf_pose.py, z-scored over all turns, clips without pose dropped) + the same AST audio."""
+    (114, tools/battle/wdsf_pose.py, z-scored over all turns, clips without pose dropped) + the same AST audio.
+    system: which slider system a criterion target comes from. stats: dict; empty = fill with the z-score of these rows,
+    filled = apply it (the 2022 holdout uses the training rounds' z-score)."""
     js = pd.read_csv(f'{D}/wdsf_judge_scores.csv')
     if target != 'total':
-        js = js[(js.system == '5crit') & js.has_criteria]
+        js = js[(js.system == system) & js.has_criteria]
     rnd = js.groupby(['competition', 'battle_id', 'round'])[target].mean().rename('blue_score').reset_index()
     # WDSF_TURNS: another segmentation of the same videos (diagnostics, tools/battle/wdsf_turns_cv.py)
     turns = pd.read_csv(os.environ.get('WDSF_TURNS', f'{D}/wdsf_turns.csv')).merge(rnd, on=['competition', 'battle_id', 'round'], how='inner')
@@ -76,8 +78,13 @@ def build_rows(target, min_clips=8, feat='pamfn'):
                          athlete=t.athlete, source=t.source, event=event_of(t.competition), score=float(s),
                          v=v[m], a=a[m]))
     if feat != 'pamfn' and rows:
-        allv = np.concatenate([r['v'] for r in rows])
-        mu, sd = allv.mean(0), allv.std(0) + 1e-6
+        if stats is not None and 'mu' in stats:
+            mu, sd = stats['mu'], stats['sd']
+        else:
+            allv = np.concatenate([r['v'] for r in rows])
+            mu, sd = allv.mean(0), allv.std(0) + 1e-6
+            if stats is not None:
+                stats.update(mu=mu, sd=sd)
         for r in rows:
             r['v'] = np.clip((r['v'] - mu) / sd, -5, 5).astype(np.float32)
     return rows
