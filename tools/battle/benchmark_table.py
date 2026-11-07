@@ -24,7 +24,8 @@ K = KEY[:2]
 TARGETS = ['total', 'Technique', 'Vocabulary', 'Originality', 'Execution', 'Musicality']
 METHODS = [('Audio AST, linear', 'probe_pamfn_aonly_k8_{t}'), ('Video Swin, linear', 'probe_pamfn_vonly_k8_{t}'),
            ('Swin + AST, linear', 'probe_pamfn_k8_{t}'), ('Pose codes, linear', 'probe_vq2_ft_vonly_k8_{t}'),
-           ('MLAVL pose codes + audio', 'vq2_ft_{t}_s*'), ('MLAVL pose codes only', 'na_vq2_ft_{t}_s*')]
+           ('MLAVL pose codes + audio', 'vq2_ft_{t}_s*'), ('MLAVL pose codes only', 'na_vq2_ft_{t}_s*'),
+           ('MLAVL Swin + audio', 'pairv_{t}_s*'), ('MLAVL Swin + pose codes + audio', 'swin_vq2_ft_{t}_s*')]
 
 
 def runs(pat, t):
