@@ -46,6 +46,10 @@ def train(a):
     np.random.seed(a.seed)
     device = torch.device('cuda')
     P, H = data(a.feat, a.target, a.holdout)
+    if a.no_audio:
+        for p in P + H:
+            for s in 'br':
+                p[s]['a'] = np.zeros_like(p[s]['a'])
     S = 3 * float(np.std([p['margin'] for p in P]))
     val_ev = pd.Series([p['event'] for p in P]).value_counts().index[0]
     fit = [p for p in P if p['event'] != val_ev]
@@ -105,8 +109,8 @@ def show(name, df):
           f'[{lo:.3f}, {hi:.3f}] rule {d.rule.mean():.3f} p(<=50%) {(acc <= .5).mean():.4f} p(<=rule) {(diff <= 0).mean():.4f}')
 
 
-def evaluate(feats, target, holdout):
-    pre = 'hold' if holdout == '2022' else 'hold26'
+def evaluate(feats, target, holdout, pre=None):
+    pre = pre or ('hold' if holdout == '2022' else 'hold26')
     os.chdir(ROOT)
     res = {}
     for F in feats:
@@ -136,11 +140,13 @@ def evaluate(feats, target, holdout):
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('--eval', nargs='*')
+    p.add_argument('--prefix', default=None)
     p.add_argument('--name')
     p.add_argument('--feat', default='vq2_ft')
     p.add_argument('--target', default='Technique')
     p.add_argument('--holdout', default='2022', choices=['2022', 'y26'])
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--no_audio', action='store_true', help='zero audio input')
     p.add_argument('--action_list', default='ours/vocab/action-label_BREAKING_draft0.csv')
     p.add_argument('--text_feature', default='ours/vocab/BREAKING_draft0_text_feature.npy')
     p.add_argument('--n_text', type=int, default=36)
@@ -154,6 +160,6 @@ if __name__ == '__main__':
     p.add_argument('--wd', type=float, default=1e-4)
     a = p.parse_args()
     if a.eval is not None:
-        evaluate(a.eval, a.target, a.holdout)
+        evaluate(a.eval, a.target, a.holdout, a.prefix)
     else:
         train(a)

@@ -86,6 +86,9 @@ def main(a):
     np.random.seed(a.seed)
     device = torch.device('cuda')
     rows = build_rows(a.target, feat=a.feat)
+    if a.no_audio:
+        for r in rows:
+            r['a'] = np.zeros_like(r['a'])
     P = [p for p in pairs(rows) if p['margin'] != 0]
     S = 3 * float(np.std([p['margin'] for p in P]))
     assign = folds(rows, a.folds)
@@ -175,5 +178,6 @@ if __name__ == '__main__':
     p.add_argument('--wd', type=float, default=1e-4)
     p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose', 'vq', 'vqpose', 'vq2', 'vq2_ft'])
     p.add_argument('--eval_epochs', default='5,10,20,30,40')
+    p.add_argument('--no_audio', action='store_true', help='zero audio input')
     p.add_argument('--inner_val', type=int, default=1, help='select the epoch on a held-out training event')
     main(p.parse_args())

@@ -77,3 +77,16 @@ Ties dropped, battle bootstrap, chance 50%.
 - Main: `vq2_ft` Technique, out-of-fold predictions on the 637 five-slider rounds, one-sided p < .05 above 50%.
 - Also reported either way: the same on the 2022 holdout and Chengdu 2026, Execution, `vq2` and `vq`, the five simple measures.
 No training, no new setting. A fail would mean this model gives no evidence of reading the performance apart from who dances.
+
+## Fifth addendum, fixed before these runs (2026-11-07): what carries the within-battle signal?
+Fourth-addendum main test passed (`vq2_ft` Technique 0.562, p = .006; 2022 holdout 0.609, p = .022). But a linear probe on AST audio alone
+reaches 0.583 (Technique) and 0.590 (Execution) on the same test, above video alone (0.549, 0.515). The audio of a live battle holds music,
+crowd, MC and possibly the reaction when votes are shown, and the MLAVL input includes that audio. So the pass may not be about movement.
+1. **MLAVL without audio** (zero audio input, `--no_audio`), `vq2_ft`, same settings, seeds 0, 1, 2, Technique and Execution, plus the 2022
+   holdout and Chengdu. Main: Technique within-battle above 50%, one-sided p < .05, cross-validation. This decides whether pose alone
+   passes. Secondary: overall vs rule; the holdouts; difference from the run with audio (paired).
+2. **Where in time is the audio signal?** Linear probe (same k = 8, same folds) on AST statistics in windows relative to each turn: 15 s before
+   the start, first half, second half, 15 s after the end. Same rounds. Expectation if votes leak: after-the-end dominates. Expectation if the
+   crowd reacts to the dancing: first and second half carry it too. Before-the-start is a negative control for the same round's dancing.
+3. **Loudness.** Blue minus red RMS (dB) in the same windows vs margin, no fitting.
+Nothing here changes a model already reported. No hyperparameter is added.
