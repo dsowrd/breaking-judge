@@ -26,8 +26,8 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-F = '/data/mlavl/features/WDSF'
-D = '/data/mlavl/datasets/wdsf'
+F = os.environ.get('WDSF_F', '/data/mlavl/features/WDSF')     # WDSF_F, WDSF_D, WDSF_V: another set, e.g. the 2026 holdout
+D = os.environ.get('WDSF_D', '/data/mlavl/datasets/wdsf')
 HZ, DOWN, WIN = 10.0, 4, 32                 # sample rate, steps per code, training window (3.2 s)
 UPPER = list(range(0, 11))                  # COCO: nose, eyes, ears, shoulders, elbows, wrists
 LOWER = list(range(11, 17))                 # hips, knees, ankles

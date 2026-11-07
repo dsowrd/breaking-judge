@@ -36,9 +36,9 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 
-F = '/data/mlavl/features/WDSF'
-D = '/data/mlavl/datasets/wdsf'
-V = '/data/mlavl/videos/wdsf'
+F = os.environ.get('WDSF_F', '/data/mlavl/features/WDSF')     # WDSF_F, WDSF_D, WDSF_V: another set, e.g. the 2026 holdout
+D = os.environ.get('WDSF_D', '/data/mlavl/datasets/wdsf')
+V = os.environ.get('WDSF_V', '/data/mlavl/videos/wdsf')
 FFMPEG = os.environ.get('FFMPEG', '/home/irl/anaconda3/bin/ffmpeg')
 TAG = os.environ.get('WDSF_POSE_TAG', '')     # '2' = YOLO11x-pose + track selection (pose_seq2, vq2, *2.csv)
 C = ['Technique', 'Vocabulary', 'Originality', 'Execution', 'Musicality']

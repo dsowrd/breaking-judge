@@ -37,6 +37,7 @@ from vst_k600 import load_vst_k600  # noqa: E402
 FFMPEG = os.environ.get('FFMPEG', '/home/irl/anaconda3/bin/ffmpeg')
 SETS = {'brace': ('/data/mlavl/videos/brace', '/data/mlavl/features/BRACE'),
         'extra': ('/data/mlavl/videos/bcone_extra', '/data/mlavl/features/BCONE_EXTRA'),
+        'wdsf_y26': ('/data/mlavl/videos/wdsf_y26', '/data/mlavl/features/WDSF_Y26'),   # second holdout, Phase 7g
         'wdsf': ('/data/mlavl/videos/wdsf', '/data/mlavl/features/WDSF')}   # Phase 5c: no clips/ pass, see extract()
 MEAN = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1, 1)
 STD = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1, 1)

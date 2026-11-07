@@ -44,11 +44,12 @@ def event_of(comp):
     return re.sub(r'-(Adult|Youth)-Breaking.*', '', comp)
 
 
-def build_rows(target, min_clips=8, feat='pamfn', system='5crit', stats=None):
+def build_rows(target, min_clips=8, feat='pamfn', system='5crit', stats=None, roots=None):
     """feat: 'pamfn' = Video Swin K600 (1024) + AST (768) per clip; 'pose' = the dancer's pose / kick-beat features
     (114, tools/battle/wdsf_pose.py, z-scored over all turns, clips without pose dropped) + the same AST audio.
     system: which slider system a criterion target comes from. stats: dict; empty = fill with the z-score of these rows,
-    filled = apply it (the 2022 holdout uses the training rounds' z-score)."""
+    filled = apply it (the 2022 holdout uses the training rounds' z-score). roots: (datasets, features) of another set."""
+    D, F = roots or (globals()['D'], globals()['F'])
     js = pd.read_csv(f'{D}/wdsf_judge_scores.csv')
     if target != 'total':
         js = js[(js.system == system) & js.has_criteria]

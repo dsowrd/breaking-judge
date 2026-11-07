@@ -22,9 +22,9 @@ import time
 import numpy as np
 import pandas as pd
 
-F = '/data/mlavl/features/WDSF'
-D = '/data/mlavl/datasets/wdsf'
-V = '/data/mlavl/videos/wdsf'
+F = os.environ.get('WDSF_F', '/data/mlavl/features/WDSF')     # WDSF_F, WDSF_D, WDSF_V: another set, e.g. the 2026 holdout
+D = os.environ.get('WDSF_D', '/data/mlavl/datasets/wdsf')
+V = os.environ.get('WDSF_V', '/data/mlavl/videos/wdsf')
 FFMPEG = os.environ.get('FFMPEG', '/home/irl/anaconda3/bin/ffmpeg')
 WEIGHTS = os.environ.get('WDSF_YOLO_WEIGHTS', '/data/mlavl/cache/ultralytics/yolo11x-pose.pt')
 T = os.environ.get('WDSF_TRACK_TAG', '')     # _ft: fine-tuned model -> yolo_tracks_ft, pose_seq2_ft

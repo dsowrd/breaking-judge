@@ -27,8 +27,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from segment_turns import Detector, brace_truth, smooth_binary  # noqa: E402
 from wdsf_turns import decode_fixed  # noqa: E402
 
-F = '/data/mlavl/features/WDSF'
-D = '/data/mlavl/datasets/wdsf'
+F = os.environ.get('WDSF_F', '/data/mlavl/features/WDSF')     # WDSF_F, WDSF_D, WDSF_V: another set, e.g. the 2026 holdout
+D = os.environ.get('WDSF_D', '/data/mlavl/datasets/wdsf')
 BRACE_F, BRACE = '/data/mlavl/features/BRACE', '/data/mlavl/datasets/brace'
 
 
@@ -199,13 +199,43 @@ def apply(a):
     print('turn length s:', out.assign(d=out.end_s - out.start_s).d.describe().round(1).to_dict())
 
 
+def segment_only(a):
+    """Another set (WDSF_F, WDSF_D): the saved detectors, no training and no hand labels."""
+    assert D != '/data/mlavl/datasets/wdsf', 'set WDSF_D: this writes {D}/wdsf_turns.csv'
+    device = torch.device('cuda')
+    ms = []
+    for k in range(3):
+        m = Detector().to(device)
+        m.load_state_dict(torch.load(f'/data/mlavl/features/WDSF/turn_detector_wdsf_joint_s{k}.pt', map_location=device))
+        ms.append(m.eval())
+    rows = []
+    for r in pd.read_csv(f'{D}/wdsf_battle_videos.csv').itertuples():
+        if not os.path.exists(f'{F}/clips/{r.video_id}.npz'):
+            print('no clips', r.video_id)
+            continue
+        X, sec = load_clips(r.video_id)
+        turns, cut_p = segment(np.mean([predict(m, X, device) for m in ms], 0), 2 * int(r.n_rounds), sec, min_turn_s=a.min_turn_s)
+        if not turns:
+            print('no decode', r.video_id)
+            continue
+        for i, (s, e) in enumerate(turns):
+            athlete = 'red' if i % 2 == 0 else 'blue'
+            rows.append({'video_id': r.video_id, 'competition': r.competition, 'battle_id': r.battle_id, 'round': i // 2 + 1,
+                         'order': i % 2 + 1, 'athlete': athlete, 'name': r.red if athlete == 'red' else r.blue,
+                         'start_s': round(s, 1), 'end_s': round(e, 1), 'source': 'auto',
+                         'min_cut_p': round(float(min(cut_p)) if cut_p else 0.0, 3)})
+    out = pd.DataFrame(rows)
+    out.to_csv(f'{D}/wdsf_turns.csv', index=False)
+    print(f'{len(out)} turns, {out.video_id.nunique()} videos;', out.assign(d=out.end_s - out.start_s).d.describe().round(1).to_dict())
+
+
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
-    p.add_argument('mode', choices=['eval', 'apply'])
+    p.add_argument('mode', choices=['eval', 'apply', 'segment'])
     p.add_argument('--variant', choices=['wdsf', 'finetune', 'joint'], default='wdsf')
     p.add_argument('--epochs', type=int, default=60)
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--n_seeds', type=int, default=1)
     p.add_argument('--min_turn_s', type=float, default=15.0)
-    main = evaluate if p.parse_args().mode == 'eval' else apply
+    main = {'eval': evaluate, 'apply': apply, 'segment': segment_only}[p.parse_args().mode]
     main(p.parse_args())

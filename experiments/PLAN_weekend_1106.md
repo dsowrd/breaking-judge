@@ -56,3 +56,15 @@ Added before reading any holdout prediction (2026-11-07, runs still going), afte
 - Beyond dancer strength: strength = blue minus red mean Technique margin in 5-criteria rounds (all training rounds, so nothing from
   2022). Joint rank regression of the holdout margin on the `vq2_ft` ensemble prediction and strength, battle bootstrap. The prediction's
   coefficient is expected positive. Secondary, reported either way. Strength's own accuracy is reported as the identity reference.
+
+## Third addendum, fixed before these videos were downloaded (2026-11-07): Chengdu 2026 youth holdout
+WDSF World Championships Chengdu 2026, Youth, B-Boys and B-Girls (September 2026): 32 battles, 78 rounds, five sliders, matched 32 / 32
+by exact names (`tools/battle/wdsf_y26_prep.py`). Newest event in the data, in no training set, and mostly dancers the model has not
+seen. Own folders (`videos/wdsf_y26`, `features/WDSF_Y26`, `datasets/wdsf_y26`); nothing refit: saved turn detector (no hand labels),
+saved YOLO, saved codebooks (`vq2_ft`, `vq2`), z-score from training rounds. Same training as the 2022 holdout, seeds 0, 1, 2.
+- Primary: `vq2_ft` Technique 3-seed ensemble above the second-dancer rule, one-sided p < .05, battle bootstrap. Fails if not.
+- Secondary, reported either way: above 50%; `vq2_ft` Execution above the rule; `vq2_ft` − `vq2` (paired); athletes absent from training;
+  inverted (`_ft`) vs Technique-specific expected positive; joint old + new pose as in the second addendum.
+- Power: at about 75 rounds the accuracy CI is about +/- 11 points, so a failure does not refute the earlier result. Youth may differ from
+  adults (the model trained on adults only) and the segmentation here has no hand check.
+No other target, seed, feature or setting is added on this question.

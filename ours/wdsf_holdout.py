@@ -27,13 +27,15 @@ from types import SimpleNamespace  # noqa: E402
 
 D = '/data/mlavl/datasets/wdsf'
 OUT = 'logs/wdsf'
+Y26 = ('/data/mlavl/datasets/wdsf_y26', '/data/mlavl/features/WDSF_Y26')
 KEY = ['competition', 'battle_id', 'round']
 
 
-def data(feat, target):
+def data(feat, target, holdout='2022'):
     stats = {}
     tr = [p for p in pairs(build_rows(target, feat=feat, stats=stats)) if p['margin'] != 0]
-    hold = [p for p in pairs(build_rows(target, feat=feat, system='6crit', stats=stats)) if p['margin'] != 0]
+    kw = dict(system='6crit') if holdout == '2022' else dict(roots=Y26)
+    hold = [p for p in pairs(build_rows(target, feat=feat, stats=stats, **kw)) if p['margin'] != 0]
     assert not {p['key'] for p in tr} & {p['key'] for p in hold}
     return tr, hold
 
@@ -43,7 +45,7 @@ def train(a):
     torch.manual_seed(a.seed)
     np.random.seed(a.seed)
     device = torch.device('cuda')
-    P, H = data(a.feat, a.target)
+    P, H = data(a.feat, a.target, a.holdout)
     S = 3 * float(np.std([p['margin'] for p in P]))
     val_ev = pd.Series([p['event'] for p in P]).value_counts().index[0]
     fit = [p for p in P if p['event'] != val_ev]
@@ -85,8 +87,8 @@ def train(a):
     print(f'validation {val_acc} -> epoch {best}', flush=True)
 
 
-def outside_training(df, feat, target):
-    P, _ = data(feat, target)
+def outside_training(df, feat, target, holdout):
+    P, _ = data(feat, target, holdout)
     js = pd.read_csv(f'{D}/wdsf_judge_scores.csv').drop_duplicates(KEY)
     tk = pd.DataFrame([p['key'] for p in P], columns=KEY).merge(js, on=KEY)
     seen = set(tk.blue_id) | set(tk.red_id)
@@ -103,11 +105,12 @@ def show(name, df):
           f'[{lo:.3f}, {hi:.3f}] rule {d.rule.mean():.3f} p(<=50%) {(acc <= .5).mean():.4f} p(<=rule) {(diff <= 0).mean():.4f}')
 
 
-def evaluate(feats, target):
+def evaluate(feats, target, holdout):
+    pre = 'hold' if holdout == '2022' else 'hold26'
     os.chdir(ROOT)
     res = {}
     for F in feats:
-        runs = [os.path.join(OUT, f'hold_{F}_{target}_s{s}') for s in (0, 1, 2)]
+        runs = [os.path.join(OUT, f'{pre}_{F}_{target}_s{s}') for s in (0, 1, 2)]
         for r in runs:
             d = load([r])
             print(os.path.basename(r), f'acc {(np.sign(d.pred) == np.sign(d.margin)).mean():.3f}',
@@ -115,7 +118,7 @@ def evaluate(feats, target):
         df = load(runs)
         res[F] = df
         show(f'{F} ens, all', df)
-        un = outside_training(df, F, target)
+        un = outside_training(df, F, target, holdout)
         if len(un):
             show(f'{F} ens, not in training', un)
         for ev, g in df.groupby('event'):
@@ -136,6 +139,7 @@ if __name__ == '__main__':
     p.add_argument('--name')
     p.add_argument('--feat', default='vq2_ft')
     p.add_argument('--target', default='Technique')
+    p.add_argument('--holdout', default='2022', choices=['2022', 'y26'])
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--action_list', default='ours/vocab/action-label_BREAKING_draft0.csv')
     p.add_argument('--text_feature', default='ours/vocab/BREAKING_draft0_text_feature.npy')
@@ -150,6 +154,6 @@ if __name__ == '__main__':
     p.add_argument('--wd', type=float, default=1e-4)
     a = p.parse_args()
     if a.eval is not None:
-        evaluate(a.eval, a.target)
+        evaluate(a.eval, a.target, a.holdout)
     else:
         train(a)

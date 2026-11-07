@@ -3,21 +3,28 @@
 Blue-minus-red measures vs Technique-specific (Technique minus the mean of the six sliders) on the rounds of the six-slider
 events that have Technique. Both poses, Spearman with a battle bootstrap, then a joint rank regression of old + new pose.
 
-    $MLAVL_PY -I tools/battle/holdout_measures.py
+    $MLAVL_PY -I tools/battle/holdout_measures.py            # 2022 holdout
+    $MLAVL_PY -I tools/battle/holdout_measures.py y26        # Chengdu 2026 youth: five sliders, own measure files
 """
+import sys
+
 import numpy as np
 import pandas as pd
 
-D = '/data/mlavl/datasets/wdsf'
+D = '/data/mlavl/datasets/wdsf_y26' if sys.argv[1:] == ['y26'] else '/data/mlavl/datasets/wdsf'
 KEY = ['competition', 'battle_id', 'round']
-C6 = ['Technique', 'Variety', 'Performativity', 'Musicality', 'Creativity', 'Personality']
+C6 = ['Technique', 'Vocabulary', 'Originality', 'Execution', 'Musicality'] if sys.argv[1:] == ['y26'] else \
+    ['Technique', 'Variety', 'Performativity', 'Musicality', 'Creativity', 'Personality']
 M = ['inverted', 'energy', 'spin']
 
 
 def labels():
     js = pd.read_csv(f'{D}/wdsf_judge_scores.csv')
-    js = js[js.system == '6crit']
-    js = js[js.competition.isin(js[js.Technique != 0].competition.unique())]
+    if sys.argv[1:] == ['y26']:
+        js = js[js.competition.isin(pd.read_csv(f'{D}/wdsf_battle_videos.csv').competition.unique())]
+    else:
+        js = js[js.system == '6crit']
+        js = js[js.competition.isin(js[js.Technique != 0].competition.unique())]
     lab = js.groupby(KEY)[C6].mean()
     lab['spec'] = lab.Technique - lab[C6].mean(1)
     return lab
