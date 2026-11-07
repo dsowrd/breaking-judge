@@ -51,3 +51,8 @@ the holdout (`scripts/phase7g_holdout.sh`, `ours/wdsf_holdout.py`). z-scoring fr
   result; a pass is strong because these rounds played no part in choosing anything. Six-slider Technique may not mean exactly the same
   as five-slider Technique (other sliders absorb some of it).
 No other target, seed, feature or setting is added on this question.
+
+Added before reading any holdout prediction (2026-11-07, runs still going), after an exploratory check on the 5-criteria rounds:
+- Beyond dancer strength: strength = blue minus red mean Technique margin in 5-criteria rounds (all training rounds, so nothing from
+  2022). Joint rank regression of the holdout margin on the `vq2_ft` ensemble prediction and strength, battle bootstrap. The prediction's
+  coefficient is expected positive. Secondary, reported either way. Strength's own accuracy is reported as the identity reference.

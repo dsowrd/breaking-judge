@@ -1169,3 +1169,10 @@ Paired t over 12 runs:
 - YOLO − Keypoint R-CNN: ρ +0.001 [−0.008, +0.010], p = .79; best MSE −0.15 [−0.30, +0.00], p = .051.
 
 **C1 fails** (needed above 0.798 with p < .05), so by the plan no Fis-V run and no deck change. The useful part: a second, independent pose model gives the same gain over the reproduction, so the midterm's pose-add gain is not specific to Keypoint R-CNN.
+
+### Does the `vq2_ft` Technique signal go beyond seed 0, dancer strength, simple measures? (exploratory, 2026-11-07)
+
+- Seeds 1, 2 only, leaving out the seed that triggered the test: Technique 0.571 [0.528, 0.613], rule 0.523, p = .069. Execution 0.568 [0.531, 0.606], rule 0.493, p = .007.
+- Dancer strength = blue minus red mean Technique margin at other events (outside the video). On the 584 rounds where both athletes have other events: **strength alone 0.700, model 0.572, rule 0.527.** Rank correlation model vs strength only +0.175.
+- Joint rank regression on the margin, battle bootstrap: prediction alone +0.210 [+0.123, +0.296]; strength alone +0.541 [+0.451, +0.620]; **together prediction +0.119 [+0.049, +0.193], strength +0.520 [+0.429, +0.602].** So the model holds something strength does not, and much of what judges give in a round is who the dancer is.
+- Simple measures on 582 rounds, fine-tuned pose: sign accuracy inverted 0.553, energy 0.572, spin 0.527, jerk 0.557, dur 0.485. Five measures in ridge on the same folds 0.550; model minus ridge +0.022 [−0.032, +0.076], p = .235. Joint: prediction +0.182 [+0.098, +0.274], ridge +0.093 [+0.003, +0.178].
