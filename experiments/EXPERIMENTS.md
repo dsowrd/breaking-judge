@@ -1297,4 +1297,22 @@ Pose-error test on these rounds (Technique-specific, Spearman): inverted old +.0
 expected; spin old +.389, new +.370; energy old +.325, new +.067, joint old +.398, new -.140. Inverted went as expected here and against it on the 2022 holdout (joint old +.335, new -.141), so this stays unsettled.
 
 **Reading.** Three separate checks now put the pose codes above the rule on Technique: cross-validation .586, 2022 .667, Chengdu .679, and pose codes alone give .575, .640, .679. The within-battle test on
-Chengdu has only 60 pairs and does not reach significance on its own (.567); a miss here does not contradict the .562 and .609 elsewhere. Not corrected for multiple comparisons. Youth rounds may be easier: the margins are not on a harder scale but skill gaps may be wider; not measured.
+Chengdu has only 60 pairs and does not reach significance on its own (.567); a miss here does not contradict the .562 and .609 elsewhere. Not corrected for multiple comparisons. Youth rounds may be easier (wider skill gaps); not measured.
+
+### Training on the within-battle signal (seventh addendum, `scripts/phase7h_within.sh`, `ours/train_wdsf_pair.py --within`, 27 runs, 2026-11-07 12:05-14:02, GPU 0)
+Main test **FAILS**, clearly. Reference = usual training on the same pairs.
+
+| `vq2_ft`, 3-seed ensemble, cross-validation | within-battle | p vs 50% | minus reference | round acc (rule) | corr with strength |
+| --- | --- | --- | --- | --- | --- |
+| Technique, no audio, `--within only` (**main**) | **.476** [.428, .521] | .852 | -.068 [-.124, -.010] | .531 (.523) | +.106 (usual no audio +.221) |
+| Technique, audio, `only` | .512 [.464, .558] | .318 | -.051 [-.107, +.007] | .562 | +.119 (usual +.174) |
+| Execution, no audio, `only` | .492 [.442, .540] | .633 | +.000 [-.063, +.066] | .516 (.493) | |
+| Execution, audio, `only` | .500 [.451, .548] | .504 | -.057 [-.109, -.006] | .520 | |
+| Technique, no audio, `mix` | .539 [.490, .585] | .064 | -.004 [-.049, +.040] | .582 | +.201 |
+
+Holdouts, Technique: 2022 no audio .563 [.443, .678] (usual -.011), audio .506 (-.103); Chengdu no audio .500 (-.067), audio .583 (+.017). All p vs 50% > .15. Round accuracy dropped on most, as expected.
+Linear, fit centred by battle (reference: usual linear fit): Swin Technique .522 (-.027), Execution .481 (-.034); `vq2_ft` codes Technique .518 (-.040), Execution .523 (+.006); AST Technique .581 (-.002), Execution .582 (-.008).
+
+**Reading.** Removing between-battle differences from training does not sharpen the within-battle signal; it removes it, for video and pose, linear or MLAVL. Audio is unaffected. So the video and pose signal that orders
+rounds of one battle was learned from differences between battles. Features that separate stronger from weaker dancers also order a dancer's better and worse rounds, which is why a dancer's level and a round's quality are not cleanly separable here. About 470 pairs with a noisy
+target (judges half vs half only .556 on Technique) may also simply be too few to learn from directly; these runs cannot tell these two apart. Identity removal did work as designed on the correlation with strength (+.221 to +.106). Usual training stays the method.
