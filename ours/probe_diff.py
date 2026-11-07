@@ -26,7 +26,9 @@ def main(a):
     rows = build_rows(a.target, feat=a.feat)
     P = [p for p in pairs(rows) if p['margin'] != 0]
     assign = folds(rows)
-    feat = lambda r: np.concatenate([r['v'].mean(0), r['v'].std(0)] + ([] if a.video_only else [r['a'].mean(0), r['a'].std(0)]))
+    V = lambda r: [] if a.audio_only else [r['v'].mean(0), r['v'].std(0)]
+    A = lambda r: [] if a.video_only else [r['a'].mean(0), r['a'].std(0)]
+    feat = lambda r: np.concatenate(V(r) + A(r))
     X = np.stack([feat(p['b']) - feat(p['r']) for p in P])
     y = np.array([p['margin'] for p in P])
     ev = np.array([p['event'] for p in P])
@@ -36,7 +38,7 @@ def main(a):
         m = make_pipeline(StandardScaler(), PCA(a.k, random_state=0), Ridge(alpha=10.0))
         m.fit(np.concatenate([X[tr], -X[tr]]), np.concatenate([y[tr], -y[tr]]))
         pred[~tr] = m.predict(X[~tr])
-    out = os.path.join('logs/wdsf', a.name or f'probe_{a.feat}{"_vonly" if a.video_only else ""}_k{a.k}_{a.target}')
+    out = os.path.join('logs/wdsf', a.name or f'probe_{a.feat}{"_vonly" if a.video_only else ""}{"_aonly" if a.audio_only else ""}_k{a.k}_{a.target}')
     os.makedirs(out, exist_ok=True)
     pd.DataFrame([dict(competition=p['key'][0], battle_id=p['key'][1], round=p['key'][2], event=p['event'],
                        source=p['source'], margin=p['margin']) for p in P]).assign(pred=pred).to_csv(
@@ -50,5 +52,6 @@ if __name__ == '__main__':
     p.add_argument('--target', default='total')
     p.add_argument('--k', type=int, default=8)
     p.add_argument('--video_only', action='store_true', help='leave the audio statistics out')
+    p.add_argument('--audio_only', action='store_true', help='leave the video statistics out')
     p.add_argument('--name', default='')
     main(p.parse_args())
