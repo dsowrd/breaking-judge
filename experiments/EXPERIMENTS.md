@@ -1258,3 +1258,16 @@ Blue minus red, same folds, within-battle accuracy. AST = linear on AST statisti
 
 - Execution's within-battle signal comes from audio: no audio minus audio −0.066 [−0.115, −0.017].
 - Technique without audio stays above the rule overall and is positive but not significant within battle. So pose alone in MLAVL is not established as reading the performance apart from who dances. Linear pose codes (.558, p = .012) and inverted alone (.555, p = .013) reach it on the same test, without correction.
+
+### Do judges weigh the end of a turn? (sixth addendum, `tools/battle/time_windows.py`, 2026-11-07)
+
+**Hypothesis not supported.** Video Swin, Technique, within-battle: second half .525, first half .533, difference −0.009 [−0.083, +0.064], p = .612.
+
+| input, target | first half | second half | last quarter | whole turn | second − first |
+| --- | --- | --- | --- | --- | --- |
+| Video Swin, Technique | .533 | .525 | .531 | .554 | −.009 [−.083, +.064] |
+| Video Swin, Execution | .509 | .496 | .504 | .536 | −.013 [−.079, +.051] |
+| `vq2_ft`, Technique | .546 | .505 | .522 | .558 | −.041 [−.115, +.033] |
+| `vq2_ft`, Execution | .518 | .513 | .525 | .496 | −.005 [−.080, +.073] |
+
+Rounds with enough clips in all windows: 622 Video Swin, 598 `vq2_ft`. Movement does not carry more signal late in the turn, and neither half reaches the whole turn. So the late-turn audio signal (.569) is not matched by the movement, which fits sound building up in the room more than judges weighing the ending. Not a direct test of that.
