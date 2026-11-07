@@ -1113,3 +1113,59 @@ L8 K64 move units on the new pose: mv_distinct -> Vocabulary +0.077 [-0.015, +0.
 Reading: on power moves the old pose overestimates speed, so the extra "energy" appeared where the pose fails. **The Phase 7d energy and spin links to Technique may therefore partly be pose error on hard moves, not speed.** Inverted, which only needs coarse body orientation, is the better supported measure. Not established: fine-tuned speed could also be too smooth at 10 Hz on WDSF, BRACE truth is 2D on selected frames, and this explanation came after seeing the result. It needs a test designed in advance.
 
 Person selection on 72 new frames (seeds 20-22, same rule as the 2026-11-06 sample), overlay-only first grade by Claude, committed before any human grade: wrong person 4, unclear 1, no pose with the dancer visible 3 (`ours/wdsf/pose_grades_1107_claude.json`); earlier sample by the same grader: wrong 6, unclear 5, no pose 2. No real difference on this size; 정현도's grade is still needed.
+
+### Plan B follow-up: MLAVL on fine-tuned pose, first pass (`--feat vq2_ft`, 2026-11-07, single seed except total)
+
+Same settings and folds as plan A. Rule = "blue (second dancer) wins" on the same rounds.
+
+| target | acc [95% CI] | rule | p(acc <= rule) | unseen athletes |
+| --- | --- | --- | --- | --- |
+| total (3-seed ens) | 0.549 | 0.544 | .425 | 0.660, p = .221 |
+| Technique s0 | 0.584 [0.543, 0.625] | 0.523 | .027 | 0.600, p = .336 |
+| Execution s0 | 0.537 | 0.493 | .077 | 0.500 |
+| Vocabulary s0 | 0.525 | | | |
+| Originality s0 | 0.505 | | | |
+| Musicality s0 | 0.531 | | | |
+
+Linear probes on the same input: Technique .573 (p = .066), Execution .549 (p = .038), total .528, Musicality .567.
+
+### Plan B confirmation (addendum in `PLAN_weekend_1106.md`, fixed before the runs; `scripts/phase7f_confirm.sh`, 2026-11-07 07:45–09:25)
+
+**Primary test passes.** `vq2_ft` Technique, 3-seed ensemble, all rounds: **0.586 [0.543, 0.627]**, rule 0.523, one-sided p = .025, n = 637, 268 battles.
+
+| feature | Technique seeds 0, 1, 2 | Technique ens (rule .523) | Execution seeds 0, 1, 2 | Execution ens (rule .493) |
+| --- | --- | --- | --- | --- |
+| `vq2_ft` | .584 .554 .567 | **.586**, p = .025 | .537 .546 .564 | **.565**, p = .007 |
+| `vq2` | .549 .564 .535 | .560, p = .110 | .516 .545 .515 | .543, p = .058 |
+| `vq` | .533 .537 .530 | .548, p = .213 | .505 .516 .522 | .522, p = .180 |
+
+Secondary tests, same rounds, paired battle bootstrap:
+
+| contrast | Technique | Execution |
+| --- | --- | --- |
+| `vq2_ft` − `vq2`, all | +.025 [−.012, +.062], p = .095 | +.022 [−.016, +.060], p = .135 |
+| `vq2_ft` − `vq`, all (not in the addendum) | +.039 [−.005, +.083], p = .046 | +.046 [+.002, +.088], p = .023 |
+| `vq2_ft`, unseen athletes (n = 50) vs rule | .600, rule .540, p = .339 | .600, rule .520, p = .274 |
+| `vq2_ft` − `vq2`, unseen | .000 [−.180, +.170] | −.060 [−.188, +.061] |
+
+Reading:
+- The rule passed as fixed, and the ordering `vq` < `vq2` < `vq2_ft` holds on both targets, which fits "better pose, better prediction". The step from `vq2` to `vq2_ft` alone is not significant.
+- Limits: seed 0 triggered the test and is part of the ensemble; same rounds as the first pass; no correction for other targets; unseen athletes (n = 50) do not separate from the rule, so an identity shortcut is not excluded.
+
+### Plan C: RG with YOLO11x-pose (`scripts/phase7f_rg.sh`, 12 runs, GPU 0, commit d166992, 2026-11-07 02:53–09:26)
+
+COCO YOLO11x-pose (not the BRACE fine-tune), athlete found in 97.0 % of sampled frames (min 83.1 %), clips with pose 96.8 %. Wall time 1:12–3:04 per run at 6 parallel, RSS 1.7–1.8 GB.
+
+| RG | reproduction | Keypoint R-CNN pose add | YOLO pose add |
+| --- | --- | --- | --- |
+| Ball | 0.758 / 5.52 | 0.794 / 5.19 | 0.797 ± 0.007 / 5.01 |
+| Clubs | 0.749 / 5.08 | 0.766 / 4.77 | 0.757 ± 0.003 / 4.78 |
+| Hoop | 0.786 / 4.73 | 0.802 / 4.54 | 0.811 ± 0.014 / 4.19 |
+| Ribbon | 0.808 / 5.05 | 0.832 / 4.85 | 0.832 ± 0.033 / 4.79 |
+| **avg ρ / best MSE** | **0.775 / 5.10** | **0.798 / 4.84** | **0.799 / 4.69** |
+
+Paired t over 12 runs:
+- YOLO − reproduction: ρ +0.024 [+0.007, +0.042], p = .012; best MSE −0.41 [−0.65, −0.16], p = .004.
+- YOLO − Keypoint R-CNN: ρ +0.001 [−0.008, +0.010], p = .79; best MSE −0.15 [−0.30, +0.00], p = .051.
+
+**C1 fails** (needed above 0.798 with p < .05), so by the plan no Fis-V run and no deck change. The useful part: a second, independent pose model gives the same gain over the reproduction, so the midterm's pose-add gain is not specific to Keypoint R-CNN.

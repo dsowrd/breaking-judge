@@ -33,3 +33,21 @@ Technique and Execution, seeds 1 and 2, on `vq`, `vq2`, `vq2_ft`, same settings 
 - Primary: `vq2_ft` Technique 3-seed ensemble above the second-dancer rule, one-sided p < 0.05, all rounds. Fails if not.
 - Secondary: `vq2_ft` minus `vq2` on the same rounds (paired battle bootstrap); Execution; unseen athletes. Reported either way.
 No other target, seed or setting is added on this question.
+
+## Second addendum, fixed before any prediction on these rounds (2026-11-07): 2022 holdout
+Plan A/B and the confirmation used only 5-criteria rounds for Technique. Three 2022 events (Kitakyushu, Manchester, Seoul, B-Boys and
+B-Girls) use six sliders that include Technique, and their 47 matched battles (about 113 rounds with turns) were never used to train or
+evaluate a Technique model or a criterion measure. Only the label distribution has been looked at. The older `total` runs saw these
+rounds with their total score, a different target.
+
+Train on all 5-criteria Technique rounds, epoch chosen by the same inner validation event, seeds 0, 1, 2, on `vq2_ft` and `vq2`; predict
+the holdout (`scripts/phase7g_holdout.sh`, `ours/wdsf_holdout.py`). z-scoring from training rounds only.
+- Primary: `vq2_ft` 3-seed ensemble above the second-dancer rule on the holdout, one-sided p < .05, battle bootstrap. Fails if not.
+- Secondary, reported either way: above 50%; `vq2_ft` − `vq2` (paired); athletes absent from training.
+- Pose-error test (designed now, on rounds that did not suggest it). Blue-minus-red measures vs Technique-specific, where specific =
+  Technique minus the mean of the six sliders, Spearman, battle bootstrap: inverted (`_ft`) expected positive. Joint rank regression
+  old + new: energy and spin coefficient expected larger on the old pose, inverted larger on the new one.
+- Power: at about 113 rounds the accuracy CI is about +/- 9 points and a rho's about +/- 0.18, so a failure does not refute the 5-criteria
+  result; a pass is strong because these rounds played no part in choosing anything. Six-slider Technique may not mean exactly the same
+  as five-slider Technique (other sliders absorb some of it).
+No other target, seed, feature or setting is added on this question.
