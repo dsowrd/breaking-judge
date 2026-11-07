@@ -90,3 +90,10 @@ crowd, MC and possibly the reaction when votes are shown, and the MLAVL input in
    crowd reacts to the dancing: first and second half carry it too. Before-the-start is a negative control for the same round's dancing.
 3. **Loudness.** Blue minus red RMS (dB) in the same windows vs margin, no fitting.
 Nothing here changes a model already reported. No hyperparameter is added.
+
+## Sixth addendum, fixed before computing it (2026-11-07): do judges weigh the end of a turn?
+Audio carries the within-battle signal in the second half of a turn and not in the first. Is that only the crowd building up, or does the
+movement in the second half also matter more? Linear probe (k = 8, same folds, turn pooled mean and std), video features only, in the first
+half, second half and last quarter of each turn: Video Swin and `vq2_ft`. Technique and Execution, overall and within-battle.
+Hypothesis: second half above first half, paired battle bootstrap on within-battle accuracy, one-sided p < .05 on Technique, Video Swin.
+Reported either way. No model is chosen from this.

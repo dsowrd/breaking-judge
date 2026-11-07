@@ -1243,3 +1243,18 @@ Blue minus red, same folds, within-battle accuracy. AST = linear on AST statisti
 - **The first half has no signal, the second half does.** A turn that gets louder late goes with higher Technique and Execution, in the same pair of dancers. The likely source is the crowd reacting, then still loud after the end, but crowd and music are not separated here, so this is not shown. It may also be that judges respond to the crowd.
 - **The "before" window is not a valid negative control, my design error:** blue's before-window lies in red's turn (red dances first), so it holds red's crowd. Its loudness sign fits that (rho −0.110, louder before blue goes with red winning).
 - Consequence for any audio-visual model on live battles: audio is not only music fit, and an audio-only baseline must be reported.
+
+### MLAVL without audio (fifth addendum, `scripts/phase7g_noaudio.sh`, zero audio input, `vq2_ft`, 3 seeds, 2026-11-07, about 45 min)
+
+**Main test fails, narrowly.** Technique within-battle 0.543 [0.491, 0.593], p = .055 (with audio 0.562; difference −0.019 [−0.066, +0.027]).
+
+| | Technique, no audio | Technique, audio | Execution, no audio | Execution, audio |
+| --- | --- | --- | --- | --- |
+| overall, cross-validation | .575 (rule .523, p = .041) | .586 (p = .025) | .549 (rule .493, p = .037) | .565 (p = .007) |
+| within-battle | .543, p = .055 | .562, p = .006 | **.492**, p = .640 | .557, p = .008 |
+| unseen athletes, n = 50 | .540 (rule .540) | .600 (rule .540) | .540 (rule .520) | .600 (rule .520) |
+| 2022 holdout, overall | .640 (rule .523, p = .098) | .667 (p = .029) | | |
+| 2022 holdout, within-battle | .575, p = .071 | .609, p = .022 | | |
+
+- Execution's within-battle signal comes from audio: no audio minus audio −0.066 [−0.115, −0.017].
+- Technique without audio stays above the rule overall and is positive but not significant within battle. So pose alone in MLAVL is not established as reading the performance apart from who dances. Linear pose codes (.558, p = .012) and inverted alone (.555, p = .013) reach it on the same test, without correction.
