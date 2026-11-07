@@ -30,7 +30,7 @@ sys.path.insert(0, ROOT)
 from models import loss as mlavl_loss  # noqa: E402
 from ours.battle_dataset import crop_or_pad, windows  # noqa: E402
 from ours.train_battle import aux_loss, build_model  # noqa: E402
-from ours.train_wdsf import CRIT, build_rows, folds  # noqa: E402
+from ours.train_wdsf import CRIT, D, build_rows, folds  # noqa: E402
 
 
 def build_model_dim(cfg, device, in_dim):
@@ -154,6 +154,8 @@ def main(a):
     S = 3 * float(np.std([p['margin'] for p in P]))
     Sw = within_scale(P)
     assign = folds(rows, a.folds)
+    js = pd.read_csv(f'{D}/wdsf_judge_scores.csv').drop_duplicates(['competition', 'battle_id', 'round'])
+    ids = {(c, b, r): {x, y} for c, b, r, x, y in zip(js.competition, js.battle_id, js['round'], js.blue_id, js.red_id)}
     cfg = SimpleNamespace(text_feature=a.text_feature, n_text=a.n_text, clip_num=a.clip_num, dropout=a.dropout,
                           learn_text=False, action_list=a.action_list, init=a.init, pose=False,
                           extra='pose' if a.feat.startswith('swin_') else '')
@@ -165,6 +167,14 @@ def main(a):
     for f in range(a.folds):
         tr = [p for p in P if assign[p['event']] != f]
         te = [i for i, p in enumerate(P) if assign[p['event']] == f]
+        if a.athletes != 'all':    # ninth addendum: remove the test fold's athletes from training, or as many random rounds
+            seen = set().union(*[ids[P[i]['key']] for i in te])
+            keep = [p for p in tr if not ids[p['key']] & seen]
+            if a.athletes == 'size':
+                r = np.random.default_rng(1000 + f)
+                keep = [tr[i] for i in sorted(r.choice(len(tr), len(keep), replace=False))]
+            print(f'fold {f}: athletes={a.athletes}, training rounds {len(tr)} -> {len(keep)}', flush=True)
+            tr = keep
         # inner validation (selects the epoch without looking at the test fold): the largest training event
         tr_events = pd.Series([p['event'] for p in tr]).value_counts()
         val_ev = tr_events.index[0] if a.inner_val else None
@@ -253,4 +263,6 @@ if __name__ == '__main__':
     p.add_argument('--no_audio', action='store_true', help='zero audio input')
     p.add_argument('--within', default='none', choices=['none', 'only', 'mix'], help='train on differences between rounds of one battle')
     p.add_argument('--inner_val', type=int, default=1, help='select the epoch on a held-out training event')
+    p.add_argument('--athletes', default='all', choices=['all', 'purge', 'size'],
+                   help='purge: drop training rounds with a test-fold athlete; size: drop as many random training rounds')
     main(p.parse_args())

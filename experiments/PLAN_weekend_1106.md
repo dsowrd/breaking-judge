@@ -124,3 +124,13 @@ everything else as the usual pairwise training (`scripts/phase7i_combo.sh`): see
   Chengdu holdouts; correlation with dancer strength. Expected risk: Swin brings identity back (Phase 5c: unseen athletes 37-41%).
 Benchmark completion, no question attached: `vq2_ft` seeds 1, 2 on Vocabulary, Originality, Musicality; zero-audio `vq2_ft` seeds 0, 1, 2 on total and those three. Filled into `experiments/benchmark_wdsf.csv` as they are, no selection.
 No other target, seed or setting is added on this question.
+
+## Ninth addendum, fixed before these runs (2026-11-07 evening): does the video model lean on who the dancer is?
+The eighth addendum (and Phase 5c) suggest Swin input learns athlete identity while Bailando pose codes do not: on rounds whose athletes are absent from training,
+Technique Swin .45, Swin + codes .48, codes .60 (50 rounds, exploratory). Test this directly with the training set instead of a small subset.
+`ours/train_wdsf_pair.py --athletes purge`: per fold, drop every training round in which either athlete also appears in the test fold. Training shrinks to 127-290 rounds
+(from 477-566), so the control `--athletes size` drops the same number of training rounds at random (seeded by fold). Test rounds are unchanged (all 637 Technique rounds).
+Runs (`scripts/phase7j_purge.sh`): Technique, `--feat vq2_ft` (codes + audio) and `--feat pamfn` (Swin + AST, = `pairv`), purge and size, seeds 0, 1, 2; 12 runs, usual settings and folds, GPU 0.
+- Main: identity reliance = round accuracy(size) - accuracy(purge), 3-seed ensembles on the same rounds. Prediction: reliance(Swin) - reliance(codes) > 0, one-sided p < .05, battle bootstrap.
+- Secondary, reported either way: each of the four ensembles vs the blue rule; within-battle accuracy of each; reliance of each model on its own; Swin purge vs codes purge paired.
+- No other target, seed or setting is added on this question. If the main test fails, the identity reading of the eighth addendum stays exploratory.
