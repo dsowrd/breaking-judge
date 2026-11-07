@@ -97,3 +97,20 @@ movement in the second half also matter more? Linear probe (k = 8, same folds, t
 half, second half and last quarter of each turn: Video Swin and `vq2_ft`. Technique and Execution, overall and within-battle.
 Hypothesis: second half above first half, paired battle bootstrap on within-battle accuracy, one-sided p < .05 on Technique, Video Swin.
 Reported either way. No model is chosen from this.
+
+## Seventh addendum, fixed before these runs (2026-11-07): train on the within-battle signal itself
+Between-battle differences hold 90% of the margin variance, and dancer strength alone reaches 0.70-0.80, so the usual loss mostly rewards
+knowing who is the stronger dancer. A model that only recognises dancers predicts the same value for every round of a battle, so a loss on
+the difference between two rounds of one battle gives it nothing to gain. New training mode `--within only` in `ours/train_wdsf_pair.py`
+and `ours/wdsf_holdout.py`: each sample is two rounds of one battle, loss 10 * MSE((d_a - d_b), clip((m_a - m_b) / S_w, -1, 1)), S_w = 3 std
+of the within-battle margin differences of all rounds, MLAVL auxiliary terms unchanged, same number of turns per update and updates per
+epoch, epoch chosen on within-battle accuracy of the same inner validation event. `--within mix` adds the usual per-round MSE. Everything
+else as before: `vq2_ft`, same folds, seeds 0, 1, 2 (`scripts/phase7h_within.sh`).
+- Main: `--within only --no_audio`, Technique, cross-validation, 3-seed ensemble, within-battle accuracy above 50%, one-sided p < .05,
+  battle bootstrap. Usual training scored 0.543 (p = .055) on this test.
+- Secondary, reported either way: paired difference from usual training (same pairs, with and without audio); with audio; Execution; `mix`
+  on the main setting; round accuracy against the rule (expected lower, because identity is removed); correlation of the prediction with
+  dancer strength (expected below the usual training's +.175); Technique on the 2022 and Chengdu holdouts, with and without audio.
+- Linear counterpart, reported either way: `ours/probe_diff.py --within` (features and margins centred by battle before the fit) on Swin
+  only, AST only, `vq2_ft` codes only, k = 8, same folds, Technique and Execution.
+No other target, seed, feature, weight or setting is added on this question.

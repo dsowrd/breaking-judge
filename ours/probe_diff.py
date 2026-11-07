@@ -33,12 +33,20 @@ def main(a):
     y = np.array([p['margin'] for p in P])
     ev = np.array([p['event'] for p in P])
     pred = np.zeros(len(P))
+    if a.within:    # centre features and margins by battle before the fit, so only the differences between rounds of a battle teach
+        b = pd.Series([p['key'][:2] for p in P])
+        Xc, yc = X.copy(), y.astype(float).copy()
+        for idx in b.groupby(b).groups.values():
+            Xc[idx] -= X[idx].mean(0)
+            yc[idx] -= y[idx].mean()
+    else:
+        Xc, yc = X, y
     for f in sorted(set(assign.values())):
         tr = np.array([assign[e] != f for e in ev])
         m = make_pipeline(StandardScaler(), PCA(a.k, random_state=0), Ridge(alpha=10.0))
-        m.fit(np.concatenate([X[tr], -X[tr]]), np.concatenate([y[tr], -y[tr]]))
+        m.fit(np.concatenate([Xc[tr], -Xc[tr]]), np.concatenate([yc[tr], -yc[tr]]))
         pred[~tr] = m.predict(X[~tr])
-    out = os.path.join('logs/wdsf', a.name or f'probe_{a.feat}{"_vonly" if a.video_only else ""}{"_aonly" if a.audio_only else ""}_k{a.k}_{a.target}')
+    out = os.path.join('logs/wdsf', a.name or f'probe_{a.feat}{"_vonly" if a.video_only else ""}{"_aonly" if a.audio_only else ""}{"_within" if a.within else ""}_k{a.k}_{a.target}')
     os.makedirs(out, exist_ok=True)
     pd.DataFrame([dict(competition=p['key'][0], battle_id=p['key'][1], round=p['key'][2], event=p['event'],
                        source=p['source'], margin=p['margin']) for p in P]).assign(pred=pred).to_csv(
@@ -53,5 +61,6 @@ if __name__ == '__main__':
     p.add_argument('--k', type=int, default=8)
     p.add_argument('--video_only', action='store_true', help='leave the audio statistics out')
     p.add_argument('--audio_only', action='store_true', help='leave the video statistics out')
+    p.add_argument('--within', action='store_true', help='fit on features and margins centred by battle')
     p.add_argument('--name', default='')
     main(p.parse_args())

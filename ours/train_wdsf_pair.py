@@ -72,6 +72,64 @@ class PairDataset(Dataset):
         return f(vb), f(ab), f(vr), f(ar), torch.tensor(t, dtype=torch.float32)
 
 
+class WithinDataset(Dataset):
+    """Two rounds of one battle (--within; PLAN_weekend_1106.md, seventh addendum). Same dancers, same blue rule: only the performance
+    can differ between the two, so a model that only recognises dancers gains nothing from this target."""
+
+    def __init__(self, P, n, S, Sw, seed):
+        by = {}
+        for p in P:
+            by.setdefault(p['key'][:2], []).append(p)
+        self.groups = [g for g in by.values() if len(g) >= 2]
+        self.items = [(k, i) for k, g in enumerate(self.groups) for i in range(len(g))]
+        self.n, self.S, self.Sw, self.rng = n, S, Sw, np.random.default_rng(seed)
+
+    def __len__(self):
+        return len(self.items) // 2    # same turns per epoch as the usual dataset at the same number of turns per batch
+
+    def __getitem__(self, _):
+        k, i = self.items[self.rng.integers(len(self.items))]
+        g = self.groups[k]
+        p, q = g[i], g[(i + self.rng.integers(1, len(g))) % len(g)]
+        f = lambda x: torch.from_numpy(np.ascontiguousarray(x))
+        turns = [crop_or_pad(x['v'], x['a'], self.n, self.rng) for x in (p['b'], q['b'], p['r'], q['r'])]
+        t = lambda x: torch.tensor(x, dtype=torch.float32)
+        return ([f(v) for v, _ in turns], [f(a) for _, a in turns], t(np.clip((p['margin'] - q['margin']) / self.Sw, -1, 1)),
+                t(np.clip(p['margin'] / self.S, -1, 1)), t(np.clip(q['margin'] / self.S, -1, 1)))
+
+
+def within_scale(P):
+    """3 std of the margin differences between rounds of one battle"""
+    by = {}
+    for p in P:
+        by.setdefault(p['key'][:2], []).append(p['margin'])
+    d = [x - y for g in by.values() for i, x in enumerate(g) for y in g[i + 1:]]
+    return 3 * float(np.std(d + [-x for x in d]))
+
+
+def within_step(model, batch, mode, device):
+    """output dict of the MLAVL forward, and the margin loss for --within only / mix"""
+    V, A, dt, tp, tq = batch
+    B = V[0].shape[0]
+    o = model(torch.cat(V).to(device), torch.cat(A).to(device))
+    s = o['output']
+    dp, dq = s[:B] - s[2 * B:3 * B], s[B:2 * B] - s[3 * B:]
+    loss = torch.mean((dp - dq - dt.to(device)) ** 2)
+    if mode == 'mix':
+        loss = loss + torch.mean((dp - tp.to(device)) ** 2) + torch.mean((dq - tq.to(device)) ** 2)
+    return o, loss
+
+
+def within_acc(P, pred):
+    """share of pairs of rounds of one battle ordered as the judges' margins are"""
+    by = {}
+    for p, x in zip(P, pred):
+        by.setdefault(p['key'][:2], []).append((p['margin'], x))
+    ok = [np.sign(a[0] - b[0]) == np.sign(a[1] - b[1]) for g in by.values() for i, a in enumerate(g) for b in g[i + 1:]
+          if a[0] != b[0] and a[1] != b[1]]
+    return float(np.mean(ok)) if ok else 0.5
+
+
 @torch.no_grad()
 def turn_score(model, r, n, device):
     ws = windows(r['v'], r['a'], n)
@@ -91,6 +149,7 @@ def main(a):
             r['a'] = np.zeros_like(r['a'])
     P = [p for p in pairs(rows) if p['margin'] != 0]
     S = 3 * float(np.std([p['margin'] for p in P]))
+    Sw = within_scale(P)
     assign = folds(rows, a.folds)
     cfg = SimpleNamespace(text_feature=a.text_feature, n_text=a.n_text, clip_num=a.clip_num, dropout=a.dropout,
                           learn_text=False, action_list=a.action_list, init=a.init, pose=False)
@@ -111,16 +170,24 @@ def main(a):
         opt = torch.optim.Adam(model.parameters(), lr=a.lr, weight_decay=a.wd)
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, a.epochs, eta_min=a.lr * 0.01)
         lf = mlavl_loss.LossFun(a.alpha, 1.0, alpha_ce=a.alpha_ce)
-        dl = DataLoader(PairDataset(fit, a.clip_num, S, a.seed + f), batch_size=a.batch, shuffle=True, num_workers=0,
-                        drop_last=True)
+        if a.within == 'none':
+            dl = DataLoader(PairDataset(fit, a.clip_num, S, a.seed + f), batch_size=a.batch, shuffle=True, num_workers=0,
+                            drop_last=True)
+        else:
+            dl = DataLoader(WithinDataset(fit, a.clip_num, S, Sw, a.seed + f), batch_size=a.batch // 2, num_workers=0, drop_last=True)
         val_acc = {}
         for ep in range(1, a.epochs + 1):
             model.train()
-            for vb, ab, vr, ar, t in dl:
-                B = vb.shape[0]
-                o = model(torch.cat([vb, vr]).to(device), torch.cat([ab, ar]).to(device))
-                d = o['output'][:B] - o['output'][B:]
-                loss = 10 * torch.mean((d - t.to(device)) ** 2) + a.w_aux * aux_loss(lf, o)
+            for batch in dl:
+                if a.within == 'none':
+                    vb, ab, vr, ar, t = batch
+                    B = vb.shape[0]
+                    o = model(torch.cat([vb, vr]).to(device), torch.cat([ab, ar]).to(device))
+                    d = o['output'][:B] - o['output'][B:]
+                    margin_loss = torch.mean((d - t.to(device)) ** 2)
+                else:
+                    o, margin_loss = within_step(model, batch, a.within, device)
+                loss = 10 * margin_loss + a.w_aux * aux_loss(lf, o)
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
@@ -133,7 +200,8 @@ def main(a):
                 if val:
                     pv = np.array([turn_score(model, p['b'], a.clip_num, device) - turn_score(model, p['r'], a.clip_num, device)
                                    for p in val])
-                    val_acc[ep] = float((np.sign(pv) == np.sign([p['margin'] for p in val])).mean())
+                    val_acc[ep] = (float((np.sign(pv) == np.sign([p['margin'] for p in val])).mean()) if a.within == 'none'
+                                   else within_acc(val, pv))
         best = max(val_acc, key=lambda e: (val_acc[e], -e)) if val_acc else a.epochs
         chosen[f] = dict(val_event=val_ev, val_acc=val_acc, epoch=best)
         pred[te] = pred_e[best][te]
@@ -179,5 +247,6 @@ if __name__ == '__main__':
     p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose', 'vq', 'vqpose', 'vq2', 'vq2_ft'])
     p.add_argument('--eval_epochs', default='5,10,20,30,40')
     p.add_argument('--no_audio', action='store_true', help='zero audio input')
+    p.add_argument('--within', default='none', choices=['none', 'only', 'mix'], help='train on differences between rounds of one battle')
     p.add_argument('--inner_val', type=int, default=1, help='select the epoch on a held-out training event')
     main(p.parse_args())

@@ -22,7 +22,8 @@ from models import loss as mlavl_loss  # noqa: E402
 from ours.eval_pair import boot, load  # noqa: E402
 from ours.train_battle import aux_loss  # noqa: E402
 from ours.train_wdsf import build_rows  # noqa: E402
-from ours.train_wdsf_pair import PairDataset, build_model_dim, pairs, turn_score  # noqa: E402
+from ours.train_wdsf_pair import (PairDataset, WithinDataset, build_model_dim, pairs, turn_score, within_acc,  # noqa: E402
+                                  within_scale, within_step)
 from types import SimpleNamespace  # noqa: E402
 
 D = '/data/mlavl/datasets/wdsf'
@@ -61,16 +62,24 @@ def train(a):
     opt = torch.optim.Adam(model.parameters(), lr=a.lr, weight_decay=a.wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, a.epochs, eta_min=a.lr * 0.01)
     lf = mlavl_loss.LossFun(a.alpha, 1.0, alpha_ce=a.alpha_ce)
-    dl = DataLoader(PairDataset(fit, a.clip_num, S, a.seed), batch_size=a.batch, shuffle=True, num_workers=0, drop_last=True)
+    if a.within == 'none':
+        dl = DataLoader(PairDataset(fit, a.clip_num, S, a.seed), batch_size=a.batch, shuffle=True, num_workers=0, drop_last=True)
+    else:
+        dl = DataLoader(WithinDataset(fit, a.clip_num, S, within_scale(P), a.seed), batch_size=a.batch // 2, num_workers=0, drop_last=True)
     E, val_acc, pred = {5, 10, 20, 30, 40, a.epochs}, {}, {}
     margin = lambda p: turn_score(model, p['b'], a.clip_num, device) - turn_score(model, p['r'], a.clip_num, device)
     for ep in range(1, a.epochs + 1):
         model.train()
-        for vb, ab, vr, ar, t in dl:
-            B = vb.shape[0]
-            o = model(torch.cat([vb, vr]).to(device), torch.cat([ab, ar]).to(device))
-            d = o['output'][:B] - o['output'][B:]
-            loss = 10 * torch.mean((d - t.to(device)) ** 2) + aux_loss(lf, o)
+        for batch in dl:
+            if a.within == 'none':
+                vb, ab, vr, ar, t = batch
+                B = vb.shape[0]
+                o = model(torch.cat([vb, vr]).to(device), torch.cat([ab, ar]).to(device))
+                d = o['output'][:B] - o['output'][B:]
+                margin_loss = torch.mean((d - t.to(device)) ** 2)
+            else:
+                o, margin_loss = within_step(model, batch, a.within, device)
+            loss = 10 * margin_loss + aux_loss(lf, o)
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -78,7 +87,8 @@ def train(a):
         if ep in E:
             model.eval()
             pv = np.array([margin(p) for p in val])
-            val_acc[ep] = float((np.sign(pv) == np.sign([p['margin'] for p in val])).mean())
+            val_acc[ep] = (float((np.sign(pv) == np.sign([p['margin'] for p in val])).mean()) if a.within == 'none'
+                           else within_acc(val, pv))
             pred[ep] = np.array([margin(p) * S for p in H])   # read only for the chosen epoch below
     best = max(val_acc, key=lambda e: (val_acc[e], -e))
     out = os.path.join(OUT, a.name)
@@ -147,6 +157,7 @@ if __name__ == '__main__':
     p.add_argument('--holdout', default='2022', choices=['2022', 'y26'])
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--no_audio', action='store_true', help='zero audio input')
+    p.add_argument('--within', default='none', choices=['none', 'only', 'mix'], help='train on differences between rounds of one battle')
     p.add_argument('--action_list', default='ours/vocab/action-label_BREAKING_draft0.csv')
     p.add_argument('--text_feature', default='ours/vocab/BREAKING_draft0_text_feature.npy')
     p.add_argument('--n_text', type=int, default=36)
