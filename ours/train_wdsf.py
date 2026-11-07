@@ -66,9 +66,12 @@ def build_rows(target, min_clips=8, feat='pamfn', system='5crit', stats=None, ro
             if feat != 'pamfn':
                 # 'pose' = hand-made 114-d statistics; 'vq' = Bailando-style choreographic-memory code vectors
                 # (tools/battle/choreo_memory.py); 'vqpose' = both concatenated
-                parts = [np.load(f'{F}/{n}/{t.video_id}.npz') for n in {'vqpose': ['pose', 'vq']}.get(feat, [feat])]
-                v = np.concatenate([q['pose'].astype(np.float32) for q in parts], 1)
+                # 'swin_vq2_ft' = Video Swin + the codes on the --extra pose path (the RG combination, PLAN_weekend_1106.md, eighth addendum)
+                names = {'vqpose': ['pose', 'vq'], 'swin_vq2_ft': ['vq2_ft']}.get(feat, [feat])
+                parts = [np.load(f'{F}/{n}/{t.video_id}.npz') for n in names]
+                code = np.concatenate([q['pose'].astype(np.float32) for q in parts], 1)
                 ok = np.all([q['has_pose'] > 0 for q in parts], 0)
+                v = np.concatenate([v, code], 1) if feat.startswith('swin_') else code
             cache[t.video_id] = (v, d['audio'].astype(np.float32), centre, ok)
         v, a, centre, ok = cache[t.video_id]
         m = (centre >= t.start_s) & (centre <= t.end_s) & ok
@@ -79,15 +82,18 @@ def build_rows(target, min_clips=8, feat='pamfn', system='5crit', stats=None, ro
                          athlete=t.athlete, source=t.source, event=event_of(t.competition), score=float(s),
                          v=v[m], a=a[m]))
     if feat != 'pamfn' and rows:
+        n0 = 1024 if feat.startswith('swin_') else 0
         if stats is not None and 'mu' in stats:
             mu, sd = stats['mu'], stats['sd']
         else:
-            allv = np.concatenate([r['v'] for r in rows])
+            allv = np.concatenate([r['v'][:, n0:] for r in rows])
             mu, sd = allv.mean(0), allv.std(0) + 1e-6
             if stats is not None:
                 stats.update(mu=mu, sd=sd)
         for r in rows:
-            r['v'] = np.clip((r['v'] - mu) / sd, -5, 5).astype(np.float32)
+            z = np.clip((r['v'][:, n0:] - mu) / sd, -5, 5).astype(np.float32)
+            # Swin stays as in the paper; only the codes are z-scored; last column = has_pose for --extra pose
+            r['v'] = np.concatenate([r['v'][:, :n0], z, np.ones((len(z), 1), np.float32)], 1) if n0 else z
     return rows
 
 

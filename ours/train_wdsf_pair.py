@@ -39,6 +39,9 @@ def build_model_dim(cfg, device, in_dim):
     from models.model import MLAVL
     c = options.parser.parse_args([])
     c.dataset, c.text_feature, c.n_text, c.n_query = 'rg', cfg.text_feature, cfg.n_text, 6
+    c.extra = getattr(cfg, 'extra', '')
+    if c.extra:
+        in_dim -= 129    # the 128-d codes + has_pose on the --extra pose path; Swin keeps its own input
     c.clip_num, c.in_dim, c.dropout, c.learn_text = cfg.clip_num, in_dim, cfg.dropout, False
     names = pd.read_csv(cfg.action_list)['name'].tolist()
     return MLAVL(in_dim, 256, 8, 1, 3, 6, cfg.dropout, c, names).to(device)
@@ -152,7 +155,8 @@ def main(a):
     Sw = within_scale(P)
     assign = folds(rows, a.folds)
     cfg = SimpleNamespace(text_feature=a.text_feature, n_text=a.n_text, clip_num=a.clip_num, dropout=a.dropout,
-                          learn_text=False, action_list=a.action_list, init=a.init, pose=False)
+                          learn_text=False, action_list=a.action_list, init=a.init, pose=False,
+                          extra='pose' if a.feat.startswith('swin_') else '')
     print(f'{len(P)} rounds, target {a.target}, S = {S:.2f}', flush=True)
     pred = np.full(len(P), np.nan)
     E = sorted({int(e) for e in a.eval_epochs.split(',')} | {a.epochs})
@@ -244,7 +248,7 @@ if __name__ == '__main__':
     p.add_argument('--alpha_ce', type=float, default=0.1)
     p.add_argument('--w_aux', type=float, default=1.0)
     p.add_argument('--wd', type=float, default=1e-4)
-    p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose', 'vq', 'vqpose', 'vq2', 'vq2_ft'])
+    p.add_argument('--feat', default='pamfn', choices=['pamfn', 'pose', 'vq', 'vqpose', 'vq2', 'vq2_ft', 'swin_vq2_ft'])
     p.add_argument('--eval_epochs', default='5,10,20,30,40')
     p.add_argument('--no_audio', action='store_true', help='zero audio input')
     p.add_argument('--within', default='none', choices=['none', 'only', 'mix'], help='train on differences between rounds of one battle')

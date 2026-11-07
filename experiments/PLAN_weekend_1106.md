@@ -114,3 +114,13 @@ else as before: `vq2_ft`, same folds, seeds 0, 1, 2 (`scripts/phase7h_within.sh`
 - Linear counterpart, reported either way: `ours/probe_diff.py --within` (features and margins centred by battle before the fit) on Swin
   only, AST only, `vq2_ft` codes only, k = 8, same folds, Technique and Execution.
 No other target, seed, feature, weight or setting is added on this question.
+
+## Eighth addendum, fixed before these runs (2026-11-07): the RG combination on breaking, and a complete benchmark
+Course goal: the model that improved RG (Video Swin + Bailando pose codes, `--extra pose`, codes added to the visual tokens) has not been run on breaking with the
+fine-tuned pose. Breaking runs so far use codes alone (`vq2_ft`) or Swin alone (`pairv`). New `--feat swin_vq2_ft`: Swin as in the paper, z-scored codes through the same `--extra pose` projection,
+everything else as the usual pairwise training (`scripts/phase7i_combo.sh`): seeds 0, 1, 2, inner-validation epoch, same folds.
+- Main: Technique, cross-validation, 3-seed ensemble, round accuracy above the blue rule, one-sided p < .05, battle bootstrap.
+- Secondary, reported either way: paired vs `vq2_ft` and vs Swin-only MLAVL (three new seeds if not already present at the same settings); within-battle; rounds with an unseen athlete; Execution and total; Technique on the 2022 and
+  Chengdu holdouts; correlation with dancer strength. Expected risk: Swin brings identity back (Phase 5c: unseen athletes 37-41%).
+Benchmark completion, no question attached: `vq2_ft` seeds 1, 2 on Vocabulary, Originality, Musicality; zero-audio `vq2_ft` seeds 0, 1, 2 on total and those three. Filled into `experiments/benchmark_wdsf.csv` as they are, no selection.
+No other target, seed or setting is added on this question.

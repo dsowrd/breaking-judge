@@ -57,7 +57,8 @@ def train(a):
     val = [p for p in P if p['event'] == val_ev]
     print(f'{len(P)} training rounds, {len(H)} holdout rounds, validation event {val_ev} ({len(val)})', flush=True)
     cfg = SimpleNamespace(text_feature=a.text_feature, n_text=a.n_text, clip_num=a.clip_num, dropout=a.dropout,
-                          learn_text=False, action_list=a.action_list, init=None, pose=False)
+                          learn_text=False, action_list=a.action_list, init=None, pose=False,
+                          extra='pose' if a.feat.startswith('swin_') else '')
     model = build_model_dim(cfg, device, P[0]['b']['v'].shape[1])
     opt = torch.optim.Adam(model.parameters(), lr=a.lr, weight_decay=a.wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, a.epochs, eta_min=a.lr * 0.01)
