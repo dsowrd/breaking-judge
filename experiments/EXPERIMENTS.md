@@ -1271,3 +1271,30 @@ Blue minus red, same folds, within-battle accuracy. AST = linear on AST statisti
 | `vq2_ft`, Execution | .518 | .513 | .525 | .496 | −.005 [−.080, +.073] |
 
 Rounds with enough clips in all windows: 622 Video Swin, 598 `vq2_ft`. Movement does not carry more signal late in the turn, and neither half reaches the whole turn. So the late-turn audio signal (.569) is not matched by the movement, which fits sound building up in the room more than judges weighing the ending. Not a direct test of that.
+
+### Chengdu 2026 youth holdout (third addendum, `scripts/phase7g_y26.sh`, 32 battles, 78 rounds, turn detector and YOLO saved, no hand check, finished 2026-11-07 11:46, GPU 0)
+Five sliders, newest event, in no training set. Turn lengths sane (156 turns, median 42.7 s, 13.9-97.1 s).
+
+| `vq2_ft`, 3-seed ensemble | round acc | rule | p vs rule | within-battle (pairs) | p vs 50% |
+| --- | --- | --- | --- | --- | --- |
+| Technique, with audio (**primary**) | **0.679** [.605, .756] | .462 | **.002, PASS** | .567 [.431, .703] (60) | .201 |
+| Technique, no audio | 0.679 [.593, .766] | .462 | .006 | .567 [.433, .694] (60) | .187 |
+| Execution, with audio | 0.662 [.571, .753] | .442 | .002 | .638 [.500, .768] (58) | .038 |
+| Execution, no audio | 0.649 [.556, .750] | .442 | .005 | .552 [.426, .672] (58) | .249 |
+
+Seeds with audio Technique .679 .731 .641. No-audio minus audio within-battle: Technique +.000 [-.093, +.093], Execution -.086 [-.216, +.056].
+`vq2` Technique .603 (p vs rule .046), Execution .649 (.023); `vq2_ft` - `vq2` Technique +.077 [-.026, +.192] p = .096, Execution +.013 p = .457.
+Within-battle `vq2` Technique .617 p = .061, Execution .569 p = .160. Fifth-addendum Chengdu no-audio runs: `scripts/phase7g_y26_na.sh`.
+
+**Correction of the third addendum.** It said "mostly dancers the model has not seen" and "the model trained on adults only". Both were wrong:
+45 rounds have both athletes in training, 29 one, 4 none, and the training events include youth events (Shanghai, Porto, ...). So
+"athletes absent from training" has only 4 rounds. Exploratory, rounds with at least one unseen athlete (n = 33): Technique .667 (no audio .636),
+rule .455, p vs rule .049 (.083); Execution .697 (.697), rule .485, p .055 (.018). Both seen (n = 45): Technique .689 (.711), rule .467.
+Dancer strength from training rounds, both seen: Technique .733, Execution .523; correlation with the prediction +.206 (no audio +.253). Joint rank regression:
+prediction +.543 [+.316, +.651] p = .001, strength +.220 [-.115, +.542]. n = 45 only.
+
+Pose-error test on these rounds (Technique-specific, Spearman): inverted old +.062, fine-tuned +.258 [+.041, +.453], joint old -.481, new +.656 (old - new -1.137 [-1.507, -.312]), as
+expected; spin old +.389, new +.370; energy old +.325, new +.067, joint old +.398, new -.140. Inverted went as expected here and against it on the 2022 holdout (joint old +.335, new -.141), so this stays unsettled.
+
+**Reading.** Three separate checks now put the pose codes above the rule on Technique: cross-validation .586, 2022 .667, Chengdu .679, and pose codes alone give .575, .640, .679. The within-battle test on
+Chengdu has only 60 pairs and does not reach significance on its own (.567); a miss here does not contradict the .562 and .609 elsewhere. Not corrected for multiple comparisons. Youth rounds may be easier: the margins are not on a harder scale but skill gaps may be wider; not measured.
