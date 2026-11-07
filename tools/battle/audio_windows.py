@@ -32,7 +32,7 @@ def _rms(vid):
     dst = f'{F}/rms/{vid}.npy'
     if os.path.exists(dst):
         return vid
-    b = subprocess.run([FFMPEG, '-v', 'error', '-i', f'{V}/{vid}.mp4', '-vn', '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'],
+    b = subprocess.run([FFMPEG, '-v', 'error', '-i', f'{V}/{vid}.mp4', '-vn', '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'], stdin=subprocess.DEVNULL,
                        capture_output=True).stdout
     x = np.frombuffer(b, np.float32)
     n = len(x) // SR

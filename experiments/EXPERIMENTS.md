@@ -1203,3 +1203,43 @@ Pose-error test on the same rounds (110 rounds, Technique minus the mean of six 
 | spin | +0.118 [−0.102, +0.329] | +0.059 [−0.167, +0.279] | +0.141 [−0.135, +0.416] | −0.034 [−0.320, +0.245] | +0.176 [−0.326, +0.688] |
 
 Expected: inverted positive on the fine-tuned pose (positive, interval includes 0), energy and spin larger on the old pose (yes in direction, intervals include 0), inverted larger on the new pose (**no, the opposite direction**, wide interval). So the holdout does not confirm "inverted is the better measure on the new pose"; energy and spin weakening on the new pose repeats, but is not established at this size.
+
+### Within-battle test (fourth addendum, `tools/battle/within_battle.py`, 2026-11-07)
+
+Pairs of rounds in one battle: same two dancers, constant blue rule, so identity cannot help. Does the prediction order the two rounds as the judges' margins do? Chance 50%, battle bootstrap.
+
+**Main test passes: `vq2_ft` Technique 0.562 [0.515, 0.607], p = .006** (473 pairs, 262 battles; seeds .581, .543, .548). 2022 holdout 0.609 [0.505, 0.713], p = .022 (87 pairs).
+
+| input, Technique | overall acc | within-battle | p |
+| --- | --- | --- | --- |
+| Linear, Video Swin + AST | .595 | **.595** [.546, .641] | < .001 |
+| Linear, AST only | .569 | **.583** [.534, .631] | < .001 |
+| Linear, `vq2_ft` codes only | .573 | .558 [.508, .607] | .012 |
+| Linear, Video Swin only | .591 | .549 [.499, .600] | .030 |
+| MLAVL, `vq2_ft` + AST, 3 seeds | .586 | .562 [.515, .607] | .006 |
+| MLAVL, `vq` + AST, 3 seeds | .548 | .560 [.511, .608] | .007 |
+| MLAVL, `vq2` + AST, 3 seeds | .560 | .532 [.482, .579] | .109 |
+| MLAVL, Video Swin + AST, inner val, 1 seed | .544 | .512 [.465, .558] | .323 |
+| MLAVL, Video Swin + AST, RG init, 1 seed | .556 | .539 [.488, .589] | .066 |
+
+Other targets: `vq2_ft` MLAVL Execution 3 seeds .557 [.512, .600], p = .008; Vocabulary .521, Originality .514, Musicality .492 (seed 0), total .518 (3 seeds). Linear with Video Swin + AST: Execution .557, Vocabulary .562, Originality .469, Musicality .502. Linear AST only: Execution **.590**, Vocabulary .558, Originality .484, Musicality .548. Linear Video Swin only: Execution .515, Vocabulary .500, Originality .482, Musicality .475. Simple fine-tuned measures, Technique: inverted .555 (p = .013), energy .545 (p = .045), spin .502, jerk .509, dur .480.
+
+Ceiling, split the judges of a round in two and compare the orderings (40 random splits): Technique half vs half **0.556**, Execution 0.634. Each half is noisier than the full panel, so a perfect predictor of the true round quality would score above this: with a Gaussian model and Spearman-Brown, about 0.68 for Technique and 0.78 for Execution. Battle means account for most of the margin variance (ratio of battle-mean variance to total 0.90), the within-battle part is small and noisy.
+
+Reading: pose models and simple measures do hold within-battle information, so they are not only recognising dancers. Two checks stop this from being a pose result yet: MLAVL's input includes audio, and audio alone is as strong as anything. Fine-tuned pose is not clearly better than older pose here (`vq` .560, `vq2` .532).
+
+### Where in time is the audio signal? (fifth addendum, `tools/battle/audio_windows.py`, 2026-11-07)
+
+Blue minus red, same folds, within-battle accuracy. AST = linear on AST statistics in the window. dB = RMS loudness, louder turn higher, no fit.
+
+| window | Technique AST | Technique dB | Execution AST | Execution dB | Musicality AST | Musicality dB |
+| --- | --- | --- | --- | --- | --- | --- |
+| 15 s before start | .564 (p = .004) | .471 | .548 (p = .029) | .487 | .503 | .488 |
+| first half of turn | .507 | .503 | .505 | .470 | .477 | .483 |
+| second half of turn | **.569** (p = .002) | **.559** (p = .015) | **.571** (p = .002) | **.561** (p = .007) | .524 | .541 (p = .061) |
+| 15 s after end | .484 | .549 (p = .017) | .498 | .562 (p = .008) | **.583** (p < .001) | .509 |
+
+- **Not a vote reveal:** AST after the end carries nothing for Technique and Execution, and the signal is already in the second half of the turn, before any vote appears. Musicality after the end (.583) is unexplained.
+- **The first half has no signal, the second half does.** A turn that gets louder late goes with higher Technique and Execution, in the same pair of dancers. The likely source is the crowd reacting, then still loud after the end, but crowd and music are not separated here, so this is not shown. It may also be that judges respond to the crowd.
+- **The "before" window is not a valid negative control, my design error:** blue's before-window lies in red's turn (red dances first), so it holds red's crowd. Its loudness sign fits that (rho −0.110, louder before blue goes with red winning).
+- Consequence for any audio-visual model on live battles: audio is not only music fit, and an audio-only baseline must be reported.
