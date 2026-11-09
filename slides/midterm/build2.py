@@ -231,7 +231,7 @@ lead(s, 'Attempt 1: a codebook built on video features did not help')
 panel(s, 0.44, 1.6, 5.75, 1.55)
 bullets(s, 0.5, 1.62, 5.65, 1.5, [
     ('h', 'Why the paper datasets first?'),
-    ('s', 'On breaking (real WDSF judge scores), all 6 models were close to a trivial rule'),
+    ('s', 'First try on breaking (real WDSF judge scores): all 6 models were close to a trivial rule'),
     ('s', [('→ module problem or data problem? Could not tell', {'c': RED})]),
 ], hsz=16, ssz=14, space=300)
 textbox(s, 0.44, 3.4, 5.75, 0.35, 'Structure of attempt 1', size=15, color=NAVY, bold=True)
@@ -340,8 +340,8 @@ bullets(s, 8.9, 1.62, 4.2, 3.9, [
     ('s', '+ Beat Align (Bailando): 0.795, no gain'),
     ('s', 'Optical flow, no pose: 0.771, no gain'),
 ], hsz=15, ssz=12.5, space=150)
-bar(s, 5.72, 'Roadmap', '① Reproduction ✓  →  ② Pose codebook improves RG ✓  →  ③ Controls' + (' ✓' if done else '') + '  →  ④ Breaking (final)', size=15)
-foot(s, 'All: 4 RG apparatus × 3 seeds, same settings · p: paired t-test over the 12 runs vs. the bold baseline · Thank you')
+bar(s, 5.72, 'Roadmap', '① Reproduction ✓  →  ② Pose codebook improves RG ✓  →  ③ Controls' + (' ✓' if done else '') + '  →  ④ Breaking (final; early: Technique 0.586 vs rule 0.523)', size=13)
+foot(s, 'All: 4 RG apparatus × 3 seeds, same settings · p: paired t-test over the 12 runs vs. the bold baseline · Breaking: 637 rounds, rule = “second dancer wins” · Thank you')
 
 prs.save(OUT)
 print('saved', OUT)
